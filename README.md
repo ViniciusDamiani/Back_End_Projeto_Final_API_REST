@@ -11,3 +11,8 @@ Obs: Possívelmente terá alterações no decorrer do projeto.
 
 ## 📂 Estrutura inicial
 - Em desenvolvimento...
+
+## 👨‍🎓 Estudantes
+- Victor Bonomi;
+- Rafael Webber;
+- Vinicius Damiani.
