@@ -63,7 +63,6 @@ O **ESP32** se comunica com a API enviando e recebendo dados via HTTP, executand
 
 > **UNISATC** – Engenharia de Computação  
 > Disciplina: **Back-End**  
-> Professor: *[Nome do Professor]*
 
 ---
 
