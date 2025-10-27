@@ -1,26 +1,44 @@
-# 🏠 SmartRoom – Automação de Quarto com API REST e IoT
+# 🌿 SmartBonsai – Vaso Inteligente
 
 Projeto desenvolvido na disciplina de **Back-End** do curso de **Engenharia de Computação** da **Unisatc**, com foco em **Internet das Coisas (IoT)**.  
-O **SmartRoom** é uma aplicação que integra uma **API RESTful** com o **ESP32**, simulando a automação de um quarto moderno e inteligente.
+O **SmartBonsai** é um sistema inteligente de monitoramento e controle de um vaso de bonsai, integrando sensores a uma **API RESTful** desenvolvida em **C#**.
 
 ---
 
 ## 🎯 Objetivo
 
-Criar uma **API REST** capaz de controlar e monitorar dispositivos de um quarto, como luzes e ar-condicionado.  
-A API envia comandos ao **ESP32**, que executa as ações fisicamente (ligar/desligar LEDs e ventoinha), simulando a automação residencial.
+O projeto tem como objetivo desenvolver um **vaso de bonsai automatizado**, capaz de **monitorar e controlar as condições ideais de cultivo**.  
+Por meio de sensores e dispositivos conectados a um **ESP32**, o sistema realiza medições de **temperatura, umidade e luminosidade**, acionando automaticamente **irrigação, ventilação e iluminação** conforme a necessidade.
+
+Além do modo automático, o sistema permite o **controle remoto via API REST**, possibilitando comandos diretos para ligar ou desligar cada dispositivo.
 
 ---
 
-## 💡 Funcionalidades Principais
+## 🌱 Funcionalidades Principais
 
-- **Controle de dispositivos:**
-  - Luz do quarto → LED 1  
-  - Luz da cabeceira → LED 2  
-  - Ar-condicionado → Ventoinha  
-- **Envio e recebimento de comandos via API REST**
-- **Registro de status dos dispositivos no banco de dados**
-- **Integração entre software e hardware**
+- 🌡️ **Monitoramento de temperatura e umidade** do ambiente do vaso.  
+- 💧 **Controle automático de irrigação** através de um motor peristáltico e sensor de umidade do solo.  
+- 🌬️ **Sistema de ventilação (cooler)** para secagem em caso de excesso de umidade.  
+- 💡 **Controle de iluminação** com LEDs para simular luz solar em ambientes internos.  
+- 🧠 **Decisões automáticas** baseadas em limites configuráveis.  
+- 📡 **Integração com API REST (C# + ESP32)** para controle manual e leitura remota dos dados.  
+- 🖥️ **Display LCD** exibindo em tempo real as medições e status do sistema.  
+
+---
+
+## 🔌 Componentes Utilizados
+
+| Componente | Função |
+|-------------|--------|
+| **ESP32** | Microcontrolador principal e comunicação com a API |
+| **Sensor DHT22** | Leitura de temperatura e umidade do ar |
+| **Sensor de umidade do solo** | Verifica a necessidade de irrigação |
+| **Motor peristáltico** | Sistema de irrigação automática |
+| **Cooler (Air Cooler)** | Secagem do solo em caso de umidade alta |
+| **LDR (Sensor de luz)** | Mede a luminosidade ambiente |
+| **Relés (até 6)** | Acionamento dos dispositivos (bomba, LEDs, cooler, etc.) |
+| **LEDs** | Simulação de iluminação artificial |
+| **Display LCD 16x2** | Exibição de informações do sistema |
 
 ---
 
@@ -28,26 +46,30 @@ A API envia comandos ao **ESP32**, que executa as ações fisicamente (ligar/des
 
 | Camada | Tecnologia |
 |--------|-------------|
-| **Back-End** | Node.js + Express |
-| **Banco de Dados** | PostgreSQL / SQLite |
+| **Back-End** | C# + ASP.NET Core |
 | **Microcontrolador** | ESP32 |
-| **Linguagem do Firmware** | C++ (Arduino IDE) |
+| **Linguagem de Firmware** | C++ (Arduino IDE) |
 | **Documentação de Rotas** | Swagger / Postman |
 | **Versionamento** | Git + GitHub |
 
 ---
 
-## 🔌 Estrutura Física
+## 🖨️ Impressão 3D
 
-| Componente | Função |
-|-------------|--------|
-| ESP32 | Controlador principal |
-| LED 1 | Luz do quarto |
-| LED 2 | Luz da cabeceira |
-| Ventoinha | Simulação do ar-condicionado |
-| Resistores + Protoboard | Montagem e proteção de circuito |
+Com a **impressora 3D**, será desenvolvido um **suporte personalizado para o vaso**, contendo:
+- Alojamento para o ESP32 e relés;  
+- Dutos de ventilação para o cooler;  
+- Compartimento para LEDs e sensores;  
+- Base para o motor peristáltico e mangueiras de irrigação.  
 
-O **ESP32** se comunica com a API enviando e recebendo dados via HTTP, executando as ações de controle físico.
+A estrutura será projetada para **simular um vaso de bonsai real**, integrando estética e funcionalidade.
+
+---
+
+## 📚 Instituição
+
+> **UNISATC** – Engenharia de Computação  
+> Disciplina: **Back-End (Projeto Final – API REST)**  
 
 ---
 
@@ -59,15 +81,8 @@ O **ESP32** se comunica com a API enviando e recebendo dados via HTTP, executand
 
 ---
 
-## 📚 Instituição
-
-> **UNISATC** – Engenharia de Computação  
-> Disciplina: **Back-End**  
-
----
-
 ## 📸 Observação
 
-As fotos e esquemas de montagem do circuito serão adicionados conforme o avanço das etapas do projeto.
+As imagens, vídeos e diagramas da montagem física do sistema serão adicionados conforme o avanço das etapas do projeto.
 
 ---
