@@ -26,6 +26,11 @@ Além do modo automático, o sistema permite o **controle remoto via API REST**,
 
 ---
 
+## 👾 Cartas-Desafio
+ - **Notificações via Email** - Implemente uma funcionalidade que envie notificações por email para os usuários quando determinadas ações ocorrerem na API, como a criação ou atualização de um registro. A rota deve permitir configurar o envio de notificações e gerenciar as preferências dos usuários em relação às notificações recebidas;
+
+---
+
 ## 🔌 Componentes Utilizados
 
 | Componente | Função |
