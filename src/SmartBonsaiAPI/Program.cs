@@ -13,6 +13,8 @@ builder.Services.AddSwaggerGen();
 // Infra/Domain registrations
 builder.Services.AddDbContext<SmartRoomContext>(options => options.UseInMemoryDatabase("SmartRoomDb"));
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
+builder.Services.AddScoped<IActuatorService, ActuatorService>();
+builder.Services.AddScoped<IAutomationService, AutomationService>();
 
 var app = builder.Build();
 
