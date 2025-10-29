@@ -130,11 +130,13 @@ public class AutomationService : IAutomationService
 {
 	private readonly SmartRoomContext _db;
 	private readonly IActuatorService _actuatorService;
+    private readonly IEmailSender _emailSender;
 
-	public AutomationService(SmartRoomContext db, IActuatorService actuatorService)
+    public AutomationService(SmartRoomContext db, IActuatorService actuatorService, IEmailSender emailSender)
 	{
 		_db = db;
 		_actuatorService = actuatorService;
+        _emailSender = emailSender;
 	}
 
 	public async Task<AutomationStatusDto> GetStatusAsync()
@@ -228,13 +230,23 @@ public class AutomationService : IAutomationService
 		var actuators = await _db.Actuators.ToListAsync();
 
 		// Regras de automação
-		if (latestMeasurement.TemperatureC < automationStatus.TargetTemperatureMin)
+        if (latestMeasurement.TemperatureC < automationStatus.TargetTemperatureMin)
 		{
 			// Ligar aquecedor
 			var heater = actuators.FirstOrDefault(a => a.Type == "heater");
 			if (heater != null)
 			{
-				await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
+                var executed = await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
+                if (executed)
+                {
+                    var subject = "Automação: Aquecedor ligado";
+                    var body =
+                        $"Ação automática executada.\n" +
+                        $"Atuador: {heater.Name} (heater)\n" +
+                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C < alvo mínimo {automationStatus.TargetTemperatureMin:F1}°C\n" +
+                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                    await _emailSender.SendAsync(subject, body);
+                }
 			}
 		}
 		else if (latestMeasurement.TemperatureC > automationStatus.TargetTemperatureMax)
@@ -243,7 +255,17 @@ public class AutomationService : IAutomationService
 			var fan = actuators.FirstOrDefault(a => a.Type == "fan");
 			if (fan != null)
 			{
-				await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
+                var executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
+                if (executed)
+                {
+                    var subject = "Automação: Ventilador ligado";
+                    var body =
+                        $"Ação automática executada.\n" +
+                        $"Atuador: {fan.Name} (fan)\n" +
+                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C > alvo máximo {automationStatus.TargetTemperatureMax:F1}°C\n" +
+                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                    await _emailSender.SendAsync(subject, body);
+                }
 			}
 		}
 
@@ -253,7 +275,17 @@ public class AutomationService : IAutomationService
 			var pump = actuators.FirstOrDefault(a => a.Type == "pump");
 			if (pump != null)
 			{
-				await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
+                var executed = await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
+                if (executed)
+                {
+                    var subject = "Automação: Bomba de água ligada";
+                    var body =
+                        $"Ação automática executada.\n" +
+                        $"Atuador: {pump.Name} (pump)\n" +
+                        $"Motivo: Umidade {latestMeasurement.HumidityPct:F1}% < alvo mínimo {automationStatus.TargetHumidityMin:F1}%\n" +
+                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                    await _emailSender.SendAsync(subject, body);
+                }
 			}
 		}
 
