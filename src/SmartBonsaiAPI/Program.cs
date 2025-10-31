@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Carregar variáveis do .env (se existir)
+EnvLoader.Load();
+
 // Services
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -15,6 +18,7 @@ builder.Services.AddDbContext<SmartRoomContext>(options => options.UseInMemoryDa
 builder.Services.AddScoped<IMeasurementService, MeasurementService>();
 builder.Services.AddScoped<IActuatorService, ActuatorService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
 var app = builder.Build();
 
