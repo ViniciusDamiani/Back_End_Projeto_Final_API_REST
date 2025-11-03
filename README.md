@@ -47,6 +47,38 @@ Além do modo automático, o sistema permite o **controle remoto via API REST**,
 
 ---
 
+## 📡 Rotas da API – SmartBonsai
+
+### 🌿 Measurements Controller
+
+| **Método / Rota** | **Descrição** | **Validação** | **Respostas** |
+|--------------------|----------------|----------------|----------------|
+| **GET** `/api/devices/{deviceId}/measurements/latest` | Retorna a última medição registrada para o dispositivo informado. | `Guid.Empty → 400` | `200 OK` com os dados da última medição / `404 NotFound` se não houver medição registrada |
+| **POST** `/api/devices/{deviceId}/measurements` | Registra uma nova medição enviada pelo dispositivo. | `deviceId` válido | `201 Created` com os dados da medição criada |
+
+---
+
+### ⚙️ Actuators Controller
+
+| **Método / Rota** | **Descrição / Objetivo** | **Validação** | **Respostas** |
+|--------------------|--------------------------|----------------|----------------|
+| **POST** `/api/actuators/{id}/commands` | Envia um comando ao atuador (ex: ligar bomba). | - | `200 OK` com mensagem de sucesso / `404 NotFound` se o atuador não for encontrado |
+| **GET** `/api/actuators/{id}/status` | Retorna o status atual do atuador (ligado/desligado, intensidade etc.). | - | `200 OK` com o status atual / `404 NotFound` se o atuador não existir |
+
+---
+
+### 🤖 Automation Controller
+
+| **Método / Rota** | **Descrição / Objetivo** | **Validação** | **Respostas** |
+|--------------------|--------------------------|----------------|----------------|
+| **GET** `/api/automation/status` | Retorna o estado atual da automação (ativa ou desativada). | - | `200 OK` |
+| **POST** `/api/automation/enable` | Ativa o modo automático do sistema. | - | `200 OK` |
+| **POST** `/api/automation/disable` | Desativa o modo automático. | - | `200 OK` |
+| **PUT** `/api/automation/targets` | Atualiza as metas e limites da automação (`AutomationStatusDto`). | `ModelState.IsValid` | `200 OK` / `400 Bad Request` |
+| **POST** `/api/automation/evaluate` | Executa a lógica de automação com base nas metas configuradas. | - | `200 OK` |
+
+---
+
 ## 🌐 Tecnologias Utilizadas
 
 | Camada | Tecnologia |
