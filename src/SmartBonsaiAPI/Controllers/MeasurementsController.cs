@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 [ApiController]
 [Route("api/devices/{deviceId:guid}/measurements")]
 public class MeasurementsController : ControllerBase
-{
-    private readonly IMeasurementService _measurementService;
+{   
+    private readonly IMeasurementService _measurementService; //lógica de negócio
 
     public MeasurementsController(IMeasurementService measurementService)
     {
@@ -32,6 +32,6 @@ public class MeasurementsController : ControllerBase
             return BadRequest("deviceId inválido.");
         }
         var created = await _measurementService.CreateAsync(deviceId, dto);
-        return CreatedAtAction(nameof(GetLatest), new { deviceId = created.DeviceId }, created);
+        return CreatedAtAction(nameof(GetLatest), new { deviceId = created.DeviceId }, created); // retorna que foi criado e onde pode ser acessado, com o ID e o corpo 
     }
 }

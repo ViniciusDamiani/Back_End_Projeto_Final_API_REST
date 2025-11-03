@@ -33,6 +33,7 @@ public class ActuatorStatusDto
 
 public class AutomationStatusDto
 {
+	//Usado para configurar metas da automação
 	public bool IsEnabled { get; set; }
 	public double TargetTemperatureMin { get; set; }
 	public double TargetTemperatureMax { get; set; }
