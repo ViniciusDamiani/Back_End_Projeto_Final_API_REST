@@ -12,6 +12,7 @@ public class AutomationController : ControllerBase
         _automationService = automationService;
     }
 
+    //estado atual da automação
     [HttpGet("status")]
     public async Task<IActionResult> GetStatus()
     {
@@ -32,7 +33,8 @@ public class AutomationController : ControllerBase
         var result = await _automationService.DisableAutomaticAsync();
         return Ok(result);
     }
-
+    
+    //Atualizar Metas ou Parâmetros
     [HttpPut("targets")]
     public async Task<IActionResult> UpdateTargets([FromBody] AutomationStatusDto targets)
     {
@@ -41,6 +43,7 @@ public class AutomationController : ControllerBase
         return Ok(updated);
     }
 
+    //Forçar Avaliação das Regras
     [HttpPost("evaluate")]
     public async Task<IActionResult> EvaluateNow()
     {
