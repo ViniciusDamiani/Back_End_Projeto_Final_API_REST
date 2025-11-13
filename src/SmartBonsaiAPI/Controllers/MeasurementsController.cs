@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 
 [ApiController]
-[Route("api/devices/{deviceId:guid}/measurements")]
+[Route("api/devices/{deviceId:int}/measurements")]
 public class MeasurementsController : ControllerBase
 {   
     private readonly IMeasurementService _measurementService; //lógica de negócio
@@ -14,9 +14,9 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("latest")]
-    public async Task<IActionResult> GetLatest([FromRoute] Guid deviceId)
+    public async Task<IActionResult> GetLatest([FromRoute] int deviceId)
     {
-        if (deviceId == Guid.Empty)
+        if (deviceId == 0)
         {
             return BadRequest("deviceId inválido.");
         }
@@ -25,9 +25,9 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromRoute] Guid deviceId, [FromBody] MeasurementCreateDto dto)
+    public async Task<IActionResult> Create([FromRoute] int deviceId, [FromBody] MeasurementCreateDto dto)
     {
-        if (deviceId == Guid.Empty)
+        if (deviceId == 0)
         {
             return BadRequest("deviceId inválido.");
         }

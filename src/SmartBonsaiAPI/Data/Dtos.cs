@@ -2,14 +2,18 @@ using System;
 
 public class MeasurementCreateDto
 {
-	public double TemperatureC { get; set; }
-	public double HumidityPct { get; set; }
+	public double LightPct { get; set; }
+	public double SoilHumidityPct { get; set; }   // usado pelo deviceId 1
+    public double AirHumidityPct { get; set; }    // usado pelo deviceId 2
+    public double TemperatureC { get; set; }      // usado pelo deviceId 2
 }
 
 public class MeasurementDto
 {
 	public Guid Id { get; set; }
-	public Guid DeviceId { get; set; }
+	public int DeviceId { get; set; }
+	public double LightPct { get; set; }
+	public double SoilHumidityPct { get; set; }
 	public double TemperatureC { get; set; }
 	public double HumidityPct { get; set; }
 	public DateTime CreatedAt { get; set; }

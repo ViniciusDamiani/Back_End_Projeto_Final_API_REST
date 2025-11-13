@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IMeasurementService
 {
-    Task<MeasurementDto?> GetLatestByDeviceAsync(Guid deviceId);
-    Task<MeasurementDto> CreateAsync(Guid deviceId, MeasurementCreateDto dto);
+    Task<MeasurementDto?> GetLatestByDeviceAsync(int deviceId);
+    Task<MeasurementDto> CreateAsync(int deviceId, MeasurementCreateDto dto);
 }
 
 public class MeasurementService : IMeasurementService
@@ -18,7 +18,7 @@ public class MeasurementService : IMeasurementService
         _db = db;
     }
 
-    public async Task<MeasurementDto?> GetLatestByDeviceAsync(Guid deviceId)
+    public async Task<MeasurementDto?> GetLatestByDeviceAsync(int deviceId)
     {
         var entity = await _db.Measurements
             .Where(m => m.DeviceId == deviceId)
@@ -31,19 +31,23 @@ public class MeasurementService : IMeasurementService
         {
             Id = entity.Id,
             DeviceId = entity.DeviceId,
+            LightPct = entity.LightPct,
+            SoilHumidityPct = entity.SoilHumidityPct,
             TemperatureC = entity.TemperatureC,
             HumidityPct = entity.HumidityPct,
             CreatedAt = entity.CreatedAt
         };
     }
 
-    public async Task<MeasurementDto> CreateAsync(Guid deviceId, MeasurementCreateDto dto)
+    public async Task<MeasurementDto> CreateAsync(int deviceId, MeasurementCreateDto dto)
     {
         var entity = new Measurement
         {
             DeviceId = deviceId,
+            LightPct = dto.LightPct,
+            SoilHumidityPct = dto.SoilHumidityPct,
             TemperatureC = dto.TemperatureC,
-            HumidityPct = dto.HumidityPct,
+            HumidityPct = dto.AirHumidityPct,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -54,6 +58,8 @@ public class MeasurementService : IMeasurementService
         {
             Id = entity.Id,
             DeviceId = entity.DeviceId,
+            LightPct = dto.LightPct,
+            SoilHumidityPct = entity.SoilHumidityPct,
             TemperatureC = entity.TemperatureC,
             HumidityPct = entity.HumidityPct,
             CreatedAt = entity.CreatedAt
