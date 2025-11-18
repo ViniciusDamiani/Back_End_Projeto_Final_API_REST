@@ -34,4 +34,15 @@ public class MeasurementsController : ControllerBase
         var created = await _measurementService.CreateAsync(deviceId, dto);
         return CreatedAtAction(nameof(GetLatest), new { deviceId = created.DeviceId }, created); // retorna que foi criado e onde pode ser acessado, com o ID e o corpo 
     }
+
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromRoute] int deviceId, [FromQuery] int limit = 100)
+    {
+        if (deviceId == 0)
+        {
+            return BadRequest("deviceId inválido.");
+        }
+        var history = await _measurementService.GetHistoryAsync(deviceId, limit);
+        return Ok(history);
+    }
 }
