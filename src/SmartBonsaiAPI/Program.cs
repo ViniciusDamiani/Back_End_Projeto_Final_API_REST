@@ -39,11 +39,17 @@ app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBonsai API v1");
-    c.RoutePrefix = string.Empty; // abre o Swagger direto na raiz "/"
+    c.RoutePrefix = "swagger"; // Swagger em /swagger
 });
 
 app.UseCors("AllowAll");
 //app.UseHttpsRedirection();
+
+// 🖥️ Servir arquivos estáticos (dashboard)
+app.UseStaticFiles();
+
+// 🖥️ Servir arquivos padrão (index.html)
+app.UseDefaultFiles();
 
 app.MapControllers();
 
