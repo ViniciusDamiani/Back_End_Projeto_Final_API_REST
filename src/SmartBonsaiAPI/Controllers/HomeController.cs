@@ -3,11 +3,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace SmartBonsaiAPI.Controllers
 {
     [ApiController]
-    [Route("/")]
+    [Route("api/info")]
     public class HomeController : ControllerBase
     {
         [HttpGet]
-        public IActionResult Index()
+        public IActionResult ApiInfo()
         {
             return Ok(new
             {
