@@ -1,4 +1,6 @@
 // Configurações do Dashboard
+require('dotenv').config();
+
 const CONFIG = {
     API_BASE_URL: window.location.origin, // Usar a mesma origem
     DEVICE_IDS: {
@@ -11,7 +13,7 @@ const CONFIG = {
         FAN: '00000000-0000-0000-0000-000000000003'          // Ventilador
     },
     UPDATE_INTERVAL: 5000, // Atualizar a cada 5 segundos
-    WEATHER_API_KEY: '', // Adicionar chave da API de clima se necessário
+    WEATHER_API_KEY: process.env.WEATHER_API_KEY, // Adicionar chave da API de clima se necessário
     WEATHER_CITY: 'Florianópolis,BR' // Cidade padrão
 };
 

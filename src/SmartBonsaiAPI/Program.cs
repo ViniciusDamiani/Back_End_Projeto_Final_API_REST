@@ -23,7 +23,7 @@ builder.Services.AddScoped<IActuatorService, ActuatorService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
-// 🚀 Habilitar CORS (para o ESP32 e páginas web)
+// Habilitar CORS (para o ESP32 e páginas web)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -34,7 +34,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 📜 Ativar Swagger SEM restrição de ambiente
+// Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -45,10 +45,10 @@ app.UseSwaggerUI(c =>
 app.UseCors("AllowAll");
 //app.UseHttpsRedirection();
 
-// 🖥️ Servir arquivos estáticos (dashboard)
+// Servir arquivos estáticos (dashboard)
 app.UseStaticFiles();
 
-// 🖥️ Servir arquivos padrão (index.html)
+// Servir arquivos padrão (index.html)
 app.UseDefaultFiles();
 
 app.MapControllers();
