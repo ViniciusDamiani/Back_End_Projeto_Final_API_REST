@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBonsai Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Cabeçalho -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="header-title">
+                <i class="fas fa-seedling"></i>
+                SmartBonsai Dashboard
+            </h1>
+            <nav class="header-nav">
+                <a href="#" class="nav-link active" data-page="home">
+                    <i class="fas fa-home"></i> Início
+                </a>
+                <a href="#" class="nav-link" data-page="history">
+                    <i class="fas fa-history"></i> Histórico
+                </a>
+                <a href="#" class="nav-link" data-page="settings">
+                    <i class="fas fa-cog"></i> Configurações
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Notificações -->
+    <div id="notifications" class="notifications"></div>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <!-- Página Início -->
+        <div id="page-home" class="page active">
+            <!-- Seção 1: Status dos Sensores -->
+            <section class="section sensors-section">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-line"></i> Status dos Sensores
+                </h2>
+                
+                <div class="sensors-grid">
+                    <!-- Temperatura -->
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <h3><i class="fas fa-thermometer-half"></i> Temperatura</h3>
+                            <span class="sensor-status" id="temp-status">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                        </div>
+                        <div class="sensor-value" id="temp-value">--°C</div>
+                        <canvas id="temp-chart"></canvas>
+                    </div>
+
+                    <!-- Umidade do Solo -->
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <h3><i class="fas fa-tint"></i> Umidade do Solo</h3>
+                            <span class="sensor-status" id="soil-status">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                        </div>
+                        <div class="gauge-container">
+                            <canvas id="soil-gauge"></canvas>
+                            <div class="gauge-value" id="soil-value">--%</div>
+                        </div>
+                    </div>
+
+                    <!-- Luminosidade -->
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <h3><i class="fas fa-sun"></i> Luminosidade</h3>
+                            <span class="sensor-status" id="light-status">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                        </div>
+                        <div class="sensor-value" id="light-value">--%</div>
+                        <canvas id="light-chart"></canvas>
+                    </div>
+
+                    <!-- Consumo de Água -->
+                    <div class="sensor-card">
+                        <div class="sensor-header">
+                            <h3><i class="fas fa-water"></i> Consumo de Água</h3>
+                            <span class="sensor-status" id="water-status">
+                                <i class="fas fa-circle"></i>
+                            </span>
+                        </div>
+                        <div class="sensor-value" id="water-value">-- ml</div>
+                        <canvas id="water-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção 2: Controles -->
+            <section class="section controls-section">
+                <h2 class="section-title">
+                    <i class="fas fa-sliders-h"></i> Controles
+                </h2>
+                
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <h3>Controle Manual de Rega</h3>
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="btn-water-on">
+                                <i class="fas fa-play"></i> Ligar Rega
+                            </button>
+                            <button class="btn btn-danger" id="btn-water-off">
+                                <i class="fas fa-stop"></i> Desligar Rega
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Automação</h3>
+                        <button class="btn btn-success" id="btn-auto-enable">
+                            <i class="fas fa-robot"></i> Ativar Modo Automático
+                        </button>
+                        <button class="btn btn-warning" id="btn-auto-disable">
+                            <i class="fas fa-hand-paper"></i> Desativar Modo Automático
+                        </button>
+                        <div class="auto-status" id="auto-status">
+                            Status: <span id="auto-status-text">Verificando...</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Iluminação UV</h3>
+                        <button class="btn btn-info" id="btn-light-toggle">
+                            <i class="fas fa-lightbulb"></i> <span id="light-toggle-text">Ligar</span> Iluminação UV
+                        </button>
+                    </div>
+
+                    <div class="control-group">
+                        <h3>Horários de Rega Automática</h3>
+                        <div class="schedule-inputs">
+                            <label>
+                                Primeira Rega:
+                                <input type="time" id="schedule-time-1" value="07:00">
+                            </label>
+                            <label>
+                                Segunda Rega:
+                                <input type="time" id="schedule-time-2" value="19:00">
+                            </label>
+                            <button class="btn btn-secondary" id="btn-save-schedule">
+                                <i class="fas fa-save"></i> Salvar Horários
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção 3: Extras -->
+            <section class="section extras-section">
+                <div class="extras-grid">
+                    <!-- Histórico de Rega -->
+                    <div class="extra-card">
+                        <h3><i class="fas fa-clock"></i> Histórico de Rega</h3>
+                        <div class="history-table-container">
+                            <table class="history-table" id="watering-history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Hora</th>
+                                        <th>Quantidade</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watering-history-body">
+                                    <tr><td colspan="3">Carregando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Previsão do Tempo -->
+                    <div class="extra-card">
+                        <h3><i class="fas fa-cloud-sun"></i> Previsão do Tempo</h3>
+                        <div id="weather-container">
+                            <div class="weather-loading">Carregando dados meteorológicos...</div>
+                        </div>
+                    </div>
+
+                    <!-- Status da Planta -->
+                    <div class="extra-card">
+                        <h3><i class="fas fa-leaf"></i> Status Geral da Planta</h3>
+                        <div class="plant-status" id="plant-status">
+                            <div class="status-message" id="plant-status-message">
+                                <i class="fas fa-spinner fa-spin"></i> Analisando...
+                            </div>
+                            <div class="status-details" id="plant-status-details"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Página Histórico -->
+        <div id="page-history" class="page">
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-history"></i> Histórico Completo</h2>
+                <div class="history-filters">
+                    <label>
+                        Dispositivo:
+                        <select id="history-device-select">
+                            <option value="1">Dispositivo 1</option>
+                            <option value="2">Dispositivo 2</option>
+                        </select>
+                    </label>
+                    <label>
+                        Limite:
+                        <input type="number" id="history-limit" value="50" min="10" max="500">
+                    </label>
+                    <button class="btn btn-primary" id="btn-load-history">
+                        <i class="fas fa-sync"></i> Carregar
+                    </button>
+                </div>
+                <div class="history-chart-container">
+                    <canvas id="history-chart"></canvas>
+                </div>
+                <div class="history-table-container">
+                    <table class="history-table" id="full-history-table">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Temperatura (°C)</th>
+                                <th>Umidade Solo (%)</th>
+                                <th>Umidade Ar (%)</th>
+                                <th>Luminosidade (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="full-history-body">
+                            <tr><td colspan="5">Carregue os dados para visualizar</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Página Configurações -->
+        <div id="page-settings" class="page">
+            <section class="section">
+                <h2 class="section-title"><i class="fas fa-cog"></i> Configurações</h2>
+                
+                <div class="settings-form">
+                    <div class="settings-group">
+                        <h3>Metas de Automação</h3>
+                        <label>
+                            Temperatura Mínima (°C):
+                            <input type="number" id="setting-temp-min" step="0.1">
+                        </label>
+                        <label>
+                            Temperatura Máxima (°C):
+                            <input type="number" id="setting-temp-max" step="0.1">
+                        </label>
+                        <label>
+                            Umidade Mínima (%):
+                            <input type="number" id="setting-humidity-min" step="0.1">
+                        </label>
+                        <label>
+                            Umidade Máxima (%):
+                            <input type="number" id="setting-humidity-max" step="0.1">
+                        </label>
+                        <button class="btn btn-primary" id="btn-save-targets">
+                            <i class="fas fa-save"></i> Salvar Metas
+                        </button>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>IDs dos Atuadores</h3>
+                        <p class="settings-info">Configure os IDs dos atuadores no código JavaScript se necessário.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>SmartBonsai API v1.0.0 | Desenvolvido por Victor Bonomi, Rafael Webber e Vinicius Damiani</p>
+            <p>
+                <a href="/swagger" target="_blank" class="footer-link">
+                    <i class="fas fa-book"></i> Documentação API
+                </a>
+                |
+                <a href="https://github.com" target="_blank" class="footer-link">
+                    <i class="fab fa-github"></i> Repositório
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
+
