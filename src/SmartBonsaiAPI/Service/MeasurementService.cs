@@ -7,6 +7,7 @@ public interface IMeasurementService
 {
     Task<MeasurementDto?> GetLatestByDeviceAsync(int deviceId);
     Task<MeasurementDto> CreateAsync(int deviceId, MeasurementCreateDto dto);
+    Task<List<MeasurementDto>> GetHistoryAsync(int deviceId, int limit = 100);
 }
 
 public class MeasurementService : IMeasurementService
@@ -64,5 +65,25 @@ public class MeasurementService : IMeasurementService
             HumidityPct = entity.HumidityPct,
             CreatedAt = entity.CreatedAt
         };
+    }
+
+    public async Task<List<MeasurementDto>> GetHistoryAsync(int deviceId, int limit = 100)
+    {
+        var entities = await _db.Measurements
+            .Where(m => m.DeviceId == deviceId)
+            .OrderByDescending(m => m.CreatedAt)
+            .Take(limit)
+            .ToListAsync();
+
+        return entities.Select(e => new MeasurementDto
+        {
+            Id = e.Id,
+            DeviceId = e.DeviceId,
+            LightPct = e.LightPct,
+            SoilHumidityPct = e.SoilHumidityPct,
+            TemperatureC = e.TemperatureC,
+            HumidityPct = e.HumidityPct,
+            CreatedAt = e.CreatedAt
+        }).OrderBy(m => m.CreatedAt).ToList(); // Ordenar por data crescente para gráficos
     }
 }

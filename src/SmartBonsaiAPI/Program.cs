@@ -23,7 +23,7 @@ builder.Services.AddScoped<IActuatorService, ActuatorService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 
-// 🚀 Habilitar CORS (para o ESP32 e páginas web)
+// Habilitar CORS (para o ESP32 e páginas web)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -34,16 +34,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// 📜 Ativar Swagger SEM restrição de ambiente
+// Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartBonsai API v1");
-    c.RoutePrefix = string.Empty; // abre o Swagger direto na raiz "/"
+    c.RoutePrefix = "swagger"; // Swagger em /swagger
 });
 
 app.UseCors("AllowAll");
 //app.UseHttpsRedirection();
+
+// Servir arquivos estáticos (dashboard)
+app.UseStaticFiles();
+
+// Servir arquivos padrão (index.html)
+app.UseDefaultFiles();
 
 app.MapControllers();
 
