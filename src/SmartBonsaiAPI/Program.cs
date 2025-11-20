@@ -34,6 +34,22 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SmartRoomContext>();
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000001")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            Name = "Water Pump",
+            Type = "pump",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+}
+
+
 // Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>
