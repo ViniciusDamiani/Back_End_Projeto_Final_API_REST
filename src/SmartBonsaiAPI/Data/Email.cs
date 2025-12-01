@@ -54,7 +54,7 @@ public class SmtpEmailSender : IEmailSender
                 Credentials = string.IsNullOrEmpty(_username)
                     ? CredentialCache.DefaultNetworkCredentials
                     : new NetworkCredential(_username, _password),
-                Timeout = 30000 // 30 segundos
+                Timeout = 30000
             };
 
             using var message = new MailMessage(_from, _to)
@@ -120,5 +120,3 @@ public class SmtpEmailSender : IEmailSender
         return await SendAsync(subject, htmlBody, isHtml: true);
     }
 }
-
-

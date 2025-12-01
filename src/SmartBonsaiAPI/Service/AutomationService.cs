@@ -30,7 +30,6 @@ public class AutomationService : IAutomationService
         var status = await _db.AutomationStatus.FirstOrDefaultAsync();
         if (status == null)
         {
-            // Criar configuração padrão
             status = new AutomationStatus
             {
                 IsEnabled = false,
@@ -105,23 +104,17 @@ public class AutomationService : IAutomationService
         var automationStatus = await _db.AutomationStatus.FirstOrDefaultAsync();
         if (automationStatus?.IsEnabled != true) return;
 
-        // Buscar última medição (assumindo deviceId fixo para simplicidade)
         var latestMeasurement = await _db.Measurements
             .OrderByDescending(m => m.CreatedAt)
             .FirstOrDefaultAsync();
 
         if (latestMeasurement == null) return;
 
-        // Verificar se email está configurado
         var emailConfigured = _emailSender.IsConfigured();
-
-        // Buscar atuadores disponíveis
         var actuators = await _db.Actuators.ToListAsync();
 
-        // Regras de automação - Temperatura
         if (latestMeasurement.TemperatureC < automationStatus.TargetTemperatureMin)
         {
-            // Ligar aquecedor
             var heater = actuators.FirstOrDefault(a => a.Type == "heater");
             bool executed = false;
             
@@ -130,7 +123,6 @@ public class AutomationService : IAutomationService
                 executed = await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
             }
 
-            // Enviar email de notificação (mesmo se o atuador não existir)
             if (emailConfigured)
             {
                 await SendAutomationEmailAsync(
@@ -147,7 +139,6 @@ public class AutomationService : IAutomationService
         }
         else if (latestMeasurement.TemperatureC > automationStatus.TargetTemperatureMax)
         {
-            // Ligar ventilador
             var fan = actuators.FirstOrDefault(a => a.Type == "fan");
             bool executed = false;
             
@@ -156,7 +147,6 @@ public class AutomationService : IAutomationService
                 executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
             }
 
-            // Enviar email de notificação
             if (emailConfigured)
             {
                 await SendAutomationEmailAsync(
@@ -172,10 +162,8 @@ public class AutomationService : IAutomationService
             }
         }
 
-        // Regras de automação - Umidade do Solo
         if (latestMeasurement.SoilHumidityPct < automationStatus.TargetHumidityMin)
         {
-            // Ligar bomba de água
             var pump = actuators.FirstOrDefault(a => a.Type == "pump");
             bool executed = false;
             
@@ -184,7 +172,6 @@ public class AutomationService : IAutomationService
                 executed = await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
             }
 
-            // Enviar email de notificação
             if (emailConfigured)
             {
                 await SendAutomationEmailAsync(
@@ -201,7 +188,6 @@ public class AutomationService : IAutomationService
         }
         else if (latestMeasurement.SoilHumidityPct > automationStatus.TargetHumidityMax)
         {
-            // Umidade muito alta - ligar ventilador/cooler para secar
             var fan = actuators.FirstOrDefault(a => a.Type == "fan");
             bool executed = false;
             
@@ -210,7 +196,6 @@ public class AutomationService : IAutomationService
                 executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
             }
 
-            // Enviar email de notificação
             if (emailConfigured)
             {
                 await SendAutomationEmailAsync(
@@ -241,22 +226,19 @@ public class AutomationService : IAutomationService
                 return;
             }
 
-            // Determinar cor do header baseado no tipo de alerta
-            string headerColor = "#ff9800"; // Laranja padrão para alertas
+            string headerColor = "#ff9800";
             string icon = "⚠️";
             
             if (subject.Contains("Temperatura abaixo") || subject.Contains("Umidade do solo abaixo"))
             {
-                headerColor = "#2196F3"; // Azul para alertas de valores baixos
+                headerColor = "#2196F3";
                 icon = "📉";
             }
             else if (subject.Contains("Temperatura acima") || subject.Contains("Umidade do solo acima"))
             {
-                headerColor = "#f44336"; // Vermelho para alertas críticos
+                headerColor = "#f44336";
                 icon = "📈";
             }
-
-            // Converter o texto em parágrafos HTML no mesmo formato do email de teste
             var lines = bodyText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
             var bodyHtml = string.Join("", lines.Select(line => 
             {
@@ -264,21 +246,16 @@ public class AutomationService : IAutomationService
                 if (string.IsNullOrWhiteSpace(line))
                     return "";
                 
-                // Se a linha começa com emoji seguido de texto (ex: "📊 Dados atuais:")
                 if ((line.Contains("📊") || line.Contains("🔧") || line.Contains("🕐") || line.Contains("⚠️") || line.Contains("💧") || line.Contains("🌊")) && line.Contains(":"))
                 {
                     return $"<p><strong>{line}</strong></p>";
                 }
-                // Se a linha começa com bullet point
                 if (line.StartsWith("•"))
                 {
                     return $"<p>{line}</p>";
                 }
-                // Linhas normais de texto
                 return $"<p>{line}</p>";
             }));
-
-            // Criar HTML no mesmo estilo exato do email de teste
             var htmlBody = $@"
 <!DOCTYPE html>
 <html>
@@ -318,7 +295,6 @@ public class AutomationService : IAutomationService
         }
         catch (Exception ex)
         {
-            // Log do erro mas não interrompe a automação
             Console.WriteLine($"[AutomationService] Erro ao enviar email de automação: {ex.Message}");
             if (ex.InnerException != null)
             {

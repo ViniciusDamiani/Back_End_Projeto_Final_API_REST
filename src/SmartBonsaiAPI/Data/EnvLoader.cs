@@ -9,29 +9,24 @@ public static class EnvLoader
 
     public static void Load()
     {
-        // Procura .env em vários locais possíveis
         var candidates = new List<string>();
         
         try
         {
-            // 1. Diretório onde o executável está rodando (bin/Debug/netX.0/)
             var baseDir = AppContext.BaseDirectory;
             if (!string.IsNullOrEmpty(baseDir))
             {
                 candidates.Add(Path.Combine(baseDir, ".env"));
                 
-                // 2. Diretório pai (bin/Debug/)
                 var dir = new DirectoryInfo(baseDir);
                 if (dir?.Parent != null)
                 {
                     candidates.Add(Path.Combine(dir.Parent.FullName, ".env"));
                     
-                    // 3. Diretório avô (bin/)
                     if (dir.Parent.Parent != null)
                     {
                         candidates.Add(Path.Combine(dir.Parent.Parent.FullName, ".env"));
                         
-                        // 4. Diretório do projeto (src/SmartBonsaiAPI/)
                         if (dir.Parent.Parent.Parent != null)
                         {
                             candidates.Add(Path.Combine(dir.Parent.Parent.Parent.FullName, ".env"));
@@ -40,14 +35,12 @@ public static class EnvLoader
                 }
             }
 
-            // 5. Diretório de trabalho atual
             var currentDir = Directory.GetCurrentDirectory();
             if (!string.IsNullOrEmpty(currentDir))
             {
                 candidates.Add(Path.Combine(currentDir, ".env"));
             }
 
-            // 6. Raiz do projeto (onde está o .sln)
             try
             {
                 var solutionDir = FindSolutionDirectory();
@@ -58,12 +51,11 @@ public static class EnvLoader
             }
             catch { }
         }
-        catch
+        catch (Exception ex)
         {
-            // ignora erros de descoberta de caminho
+            Console.WriteLine($"[EnvLoader] Erro ao descobrir caminhos: {ex.Message}");
         }
 
-        // Remove duplicatas mantendo ordem
         candidates = candidates.Distinct().Where(p => !string.IsNullOrEmpty(p)).ToList();
 
         foreach (var path in candidates)
@@ -132,5 +124,3 @@ public static class EnvLoader
         }
     }
 }
-
-
