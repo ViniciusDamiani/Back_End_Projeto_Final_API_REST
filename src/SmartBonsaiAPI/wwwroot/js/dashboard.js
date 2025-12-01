@@ -96,6 +96,14 @@ class Dashboard {
             // força desligar buzzer ao reconhecer
             this.updateBuzzer(false, true);
         });
+
+        document.getElementById('btn-check-email-status')?.addEventListener('click', () => {
+            this.checkEmailStatus();
+        });
+
+        document.getElementById('btn-send-test-email')?.addEventListener('click', () => {
+            this.sendTestEmail();
+        });
     }
 
     async loadInitialData() {
@@ -305,15 +313,16 @@ class Dashboard {
 
     async updatePlantStatus() {
         try {
-            const [soilData, airData] = await Promise.all([
+            const [soilData, airData, lightData] = await Promise.all([
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.SOIL).catch(() => null),
-                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null)
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null),
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.LIGHT).catch(() => null)
             ]);
 
             const messageEl = document.getElementById('plant-status-message');
             const detailsEl = document.getElementById('plant-status-details');
 
-            if (!soilData && !airData) {
+            if (!soilData && !airData && !lightData) {
                 messageEl.innerHTML = '<i class="fas fa-question-circle"></i> Dados insuficientes';
                 messageEl.className = 'status-message warning';
                 detailsEl.textContent = 'Aguardando dados dos sensores...';
@@ -324,7 +333,7 @@ class Dashboard {
 
             const soilHumidity = soilData?.soilHumidityPct || 0;
             const temp = airData?.temperatureC || 0;
-            const light = soilData?.lightPct || airData?.lightPct || 0;
+            const light = lightData?.lightPct || 0;
 
             let status = 'healthy';
             let message = 'Planta saudável';
@@ -586,8 +595,88 @@ class Dashboard {
             const schedule = JSON.parse(localStorage.getItem('waterSchedule') || '["07:00", "19:00"]');
             if (schedule[0]) document.getElementById('schedule-time-1').value = schedule[0];
             if (schedule[1]) document.getElementById('schedule-time-2').value = schedule[1];
+
+            // Verificar status do email ao carregar a página
+            await this.checkEmailStatus();
         } catch (error) {
             console.error('Erro ao carregar configurações:', error);
+        }
+    }
+
+    async checkEmailStatus() {
+        const statusEl = document.getElementById('email-status');
+        if (!statusEl) return;
+
+        try {
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+            const status = await api.getEmailStatus();
+            
+            if (status.isConfigured) {
+                statusEl.innerHTML = `
+                    <div class="email-status-success">
+                        <i class="fas fa-check-circle"></i> 
+                        <strong>Email configurado:</strong> ${status.message}
+                    </div>
+                `;
+            } else {
+                statusEl.innerHTML = `
+                    <div class="email-status-warning">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        <strong>Email não configurado:</strong> ${status.message}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            statusEl.innerHTML = `
+                <div class="email-status-error">
+                    <i class="fas fa-times-circle"></i> 
+                    <strong>Erro:</strong> ${error.message}
+                </div>
+            `;
+        }
+    }
+
+    async sendTestEmail() {
+        const statusEl = document.getElementById('email-status');
+        const btn = document.getElementById('btn-send-test-email');
+        
+        if (!statusEl || !btn) return;
+
+        try {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando email de teste...';
+
+            const result = await api.sendTestEmail();
+            
+            if (result.success) {
+                statusEl.innerHTML = `
+                    <div class="email-status-success">
+                        <i class="fas fa-check-circle"></i> 
+                        <strong>Sucesso:</strong> ${result.message}
+                    </div>
+                `;
+                this.showNotification('Email de teste enviado com sucesso!', 'success');
+            } else {
+                statusEl.innerHTML = `
+                    <div class="email-status-error">
+                        <i class="fas fa-times-circle"></i> 
+                        <strong>Erro:</strong> ${result.message}
+                    </div>
+                `;
+                this.showNotification('Erro ao enviar email de teste', 'error');
+            }
+        } catch (error) {
+            statusEl.innerHTML = `
+                <div class="email-status-error">
+                    <i class="fas fa-times-circle"></i> 
+                    <strong>Erro:</strong> ${error.message}
+                </div>
+            `;
+            this.showNotification('Erro ao enviar email de teste: ' + error.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar Email de Teste';
         }
     }
 

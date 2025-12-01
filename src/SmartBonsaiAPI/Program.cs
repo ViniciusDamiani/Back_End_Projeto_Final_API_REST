@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +24,12 @@ builder.Services.AddSwaggerGen();
 
 // Infra/Domain registrations
 builder.Services.AddDbContext<SmartRoomContext>(options => options.UseInMemoryDatabase("SmartRoomDb"));
-builder.Services.AddScoped<IMeasurementService, MeasurementService>();
+builder.Services.AddScoped<IMeasurementService>(sp => 
+{
+    var db = sp.GetRequiredService<SmartRoomContext>();
+    var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+    return new MeasurementService(db, scopeFactory);
+});
 builder.Services.AddScoped<IActuatorService, ActuatorService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -83,8 +89,6 @@ using (var scope = app.Services.CreateScope())
         db.SaveChanges();
     }
 }
-
-
 // Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -105,5 +109,3 @@ app.UseDefaultFiles();
 app.MapControllers();
 
 app.Run();
-
-

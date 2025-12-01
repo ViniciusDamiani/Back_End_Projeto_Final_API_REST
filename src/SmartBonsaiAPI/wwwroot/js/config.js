@@ -1,4 +1,3 @@
-// src/SmartBonsaiAPI/wwwroot/js/config.js
 (function() {
   window.CONFIG = {
     API_BASE_URL: window.location.origin,
@@ -11,8 +10,6 @@
     },
     UPDATE_INTERVAL: 5000,
     WEATHER_API_KEY: null,
-    WEATHER_CITY: 'Florianópolis,BR'
+    WEATHER_CITY: 'Criciuma,BR'
   };
 })();
-
-// IDs dos atuadores podem ser configurados aqui ou obtidos dinamicamente da API

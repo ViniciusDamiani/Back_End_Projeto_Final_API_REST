@@ -92,31 +92,93 @@ class SmartBonsaiAPI {
     async getWeather() {
         if (!CONFIG.WEATHER_API_KEY) {
             // Retornar dados mock se não houver API key
+            const cityName = CONFIG.WEATHER_CITY.split(',')[0];
             return {
-                name: CONFIG.WEATHER_CITY.split(',')[0],
+                name: cityName,
                 main: {
                     temp: 22,
-                    humidity: 65
+                    humidity: 65,
+                    feels_like: 22,
+                    temp_min: 18,
+                    temp_max: 26,
+                    pressure: 1013
                 },
                 weather: [{
                     main: 'Clear',
-                    description: 'Céu limpo'
-                }]
+                    description: 'Céu limpo',
+                    icon: '01d'
+                }],
+                wind: {
+                    speed: 2.5
+                }
             };
         }
 
         try {
             const response = await fetch(
-                `https://api.openweathermap.org/data/2.5/weather?q=${CONFIG.WEATHER_CITY}&appid=${CONFIG.WEATHER_API_KEY}&units=metric&lang=pt_br`
+                `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(CONFIG.WEATHER_CITY)}&appid=${CONFIG.WEATHER_API_KEY}&units=metric&lang=pt_br`
             );
-            return await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`Weather API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            // Verificar se a resposta contém erro
+            if (data.cod && data.cod !== 200) {
+                throw new Error(data.message || 'Erro na API de clima');
+            }
+            
+            return data;
         } catch (error) {
             console.error('Weather API Error:', error);
-            return null;
+            // Retornar dados mock em caso de erro
+            const cityName = CONFIG.WEATHER_CITY.split(',')[0];
+            return {
+                name: cityName,
+                main: {
+                    temp: 22,
+                    humidity: 65,
+                    feels_like: 22,
+                    temp_min: 18,
+                    temp_max: 26,
+                    pressure: 1013
+                },
+                weather: [{
+                    main: 'Clear',
+                    description: 'Dados não disponíveis',
+                    icon: '01d'
+                }],
+                wind: {
+                    speed: 2.5
+                },
+                _error: true,
+                _errorMessage: error.message
+            };
         }
+    }
+
+    // Email testing methods
+    async getEmailStatus() {
+        return this.request('/api/email/status');
+    }
+
+    async sendTestEmail() {
+        return this.request('/api/email/test', {
+            method: 'POST'
+        });
+    }
+
+    async sendEmail(subject, body, isHtml = false) {
+        return this.request('/api/email/send', {
+            method: 'POST',
+            body: JSON.stringify({ subject, body, isHtml })
+        });
     }
 }
 
 // Instância global da API
 const api = new SmartBonsaiAPI(CONFIG.API_BASE_URL);
+
 

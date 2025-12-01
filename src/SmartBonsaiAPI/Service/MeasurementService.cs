@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 public interface IMeasurementService
 {
@@ -14,10 +15,12 @@ public interface IMeasurementService
 public class MeasurementService : IMeasurementService
 {
     private readonly SmartRoomContext _db;
+    private readonly IServiceScopeFactory? _serviceScopeFactory;
 
-    public MeasurementService(SmartRoomContext db)
+    public MeasurementService(SmartRoomContext db, IServiceScopeFactory? serviceScopeFactory = null)
     {
         _db = db;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public async Task<MeasurementDto?> GetLatestByDeviceAsync(int deviceId)
@@ -59,6 +62,25 @@ public class MeasurementService : IMeasurementService
 
         _db.Measurements.Add(entity);
         await _db.SaveChangesAsync();
+
+        // Avaliar regras de automação automaticamente após criar medição
+        // (executar em background para não bloquear a resposta)
+        if (_serviceScopeFactory != null)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var automationService = scope.ServiceProvider.GetRequiredService<IAutomationService>();
+                    await automationService.EvaluateRulesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MeasurementService] Erro ao avaliar regras de automação: {ex.Message}");
+                }
+            });
+        }
 
         return new MeasurementDto
         {
