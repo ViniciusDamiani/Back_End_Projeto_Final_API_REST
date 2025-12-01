@@ -71,7 +71,7 @@
                     </div>
 
                     <!-- Luminosidade -->
-                    <div class="sensor-card">
+                    <div class="sensor-card" id="light-card">
                         <div class="sensor-header">
                             <h3><i class="fas fa-sun"></i> Luminosidade</h3>
                             <span class="sensor-status" id="light-status">
@@ -104,13 +104,15 @@
                 
                 <div class="controls-grid">
                     <div class="control-group">
-                        <h3>Controle Manual de Rega</h3>
+                        <h3>Motores</h3>
                         <div class="button-group">
-                            <button class="btn btn-primary" id="btn-water-on">
-                                <i class="fas fa-play"></i> Ligar Rega
+                            <button class="btn btn-primary" id="btn-water-toggle">
+                                <i class="fas fa-play"></i> Ligar Irrigação
                             </button>
-                            <button class="btn btn-danger" id="btn-water-off">
-                                <i class="fas fa-stop"></i> Desligar Rega
+                        </div>
+                        <div class="button-group" style="margin-top: 0.5rem;">
+                            <button class="btn btn-success" id="btn-aerator-toggle">
+                                <i class="fas fa-fan"></i> Ligar Aerador
                             </button>
                         </div>
                     </div>
@@ -192,6 +194,13 @@
                                 <i class="fas fa-spinner fa-spin"></i> Analisando...
                             </div>
                             <div class="status-details" id="plant-status-details"></div>
+                            <div class="alarm-area">
+                                <span class="alarm-badge active" id="alarm-active-badge">Alarme ativo</span>
+                                <span class="alarm-badge ack" id="alarm-ack-badge">Alarme reconhecido</span>
+                                <button class="btn btn-warning" id="btn-ack-alarm">
+                                    <i class="fas fa-bell-slash"></i> Reconhecer alarme
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -208,6 +217,7 @@
                         <select id="history-device-select">
                             <option value="1">Dispositivo 1</option>
                             <option value="2">Dispositivo 2</option>
+                            <option value="4">Dispositivo 4 (Fluxo)</option>
                         </select>
                     </label>
                     <label>

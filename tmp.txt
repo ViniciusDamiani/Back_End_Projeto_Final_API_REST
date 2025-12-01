@@ -1,0 +1,1 @@
+(Get-Content src/SmartBonsaiAPI/wwwroot/js/config.js -Raw)

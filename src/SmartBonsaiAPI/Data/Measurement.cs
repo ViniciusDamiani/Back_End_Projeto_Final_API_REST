@@ -8,6 +8,8 @@ public class Measurement
 	public double SoilHumidityPct { get; set; }
 	public double TemperatureC { get; set; }
 	public double HumidityPct { get; set; }
+	public double WaterFlowLpm { get; set; }
+	public double WaterVolumeMl { get; set; }
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 

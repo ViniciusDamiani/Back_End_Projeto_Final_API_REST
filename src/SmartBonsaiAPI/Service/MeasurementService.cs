@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +37,8 @@ public class MeasurementService : IMeasurementService
             SoilHumidityPct = entity.SoilHumidityPct,
             TemperatureC = entity.TemperatureC,
             HumidityPct = entity.HumidityPct,
+            WaterFlowLpm = entity.WaterFlowLpm,
+            WaterVolumeMl = entity.WaterVolumeMl,
             CreatedAt = entity.CreatedAt
         };
     }
@@ -49,6 +52,8 @@ public class MeasurementService : IMeasurementService
             SoilHumidityPct = dto.SoilHumidityPct,
             TemperatureC = dto.TemperatureC,
             HumidityPct = dto.AirHumidityPct,
+            WaterFlowLpm = dto.WaterFlowLpm,
+            WaterVolumeMl = dto.WaterVolumeMl,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -59,10 +64,12 @@ public class MeasurementService : IMeasurementService
         {
             Id = entity.Id,
             DeviceId = entity.DeviceId,
-            LightPct = dto.LightPct,
+            LightPct = entity.LightPct,
             SoilHumidityPct = entity.SoilHumidityPct,
             TemperatureC = entity.TemperatureC,
             HumidityPct = entity.HumidityPct,
+            WaterFlowLpm = entity.WaterFlowLpm,
+            WaterVolumeMl = entity.WaterVolumeMl,
             CreatedAt = entity.CreatedAt
         };
     }
@@ -83,7 +90,9 @@ public class MeasurementService : IMeasurementService
             SoilHumidityPct = e.SoilHumidityPct,
             TemperatureC = e.TemperatureC,
             HumidityPct = e.HumidityPct,
+            WaterFlowLpm = e.WaterFlowLpm,
+            WaterVolumeMl = e.WaterVolumeMl,
             CreatedAt = e.CreatedAt
-        }).OrderBy(m => m.CreatedAt).ToList(); // Ordenar por data crescente para gráficos
+        }).OrderBy(m => m.CreatedAt).ToList();
     }
 }

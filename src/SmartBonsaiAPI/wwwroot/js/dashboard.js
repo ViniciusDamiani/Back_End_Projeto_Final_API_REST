@@ -3,8 +3,14 @@
 class Dashboard {
     constructor() {
         this.updateInterval = null;
-        this.wateringHistory = JSON.parse(localStorage.getItem('wateringHistory') || '[]');
-        this.waterConsumption = JSON.parse(localStorage.getItem('waterConsumption') || '{}');
+        this.lastBuzzerOn = null;
+        this.alarmAck = false;
+        this.lastStatus = null;
+        this.waterOn = null;
+        this.aeratorOn = null;
+        this.scheduledTimes = JSON.parse(localStorage.getItem('waterSchedule') || '["07:00","19:00"]');
+        this.lastScheduleRun = localStorage.getItem('waterScheduleLastRun') || null;
+        this.automationEnabled = false;
         this.init();
     }
 
@@ -25,15 +31,12 @@ class Dashboard {
                 e.preventDefault();
                 const targetPage = link.dataset.page;
 
-                // Remove active de todos
                 navLinks.forEach(l => l.classList.remove('active'));
                 pages.forEach(p => p.classList.remove('active'));
 
-                // Adiciona active ao selecionado
                 link.classList.add('active');
                 document.getElementById(`page-${targetPage}`)?.classList.add('active');
 
-                // Carrega dados específicos da página
                 if (targetPage === 'history') {
                     this.loadHistoryPage();
                 } else if (targetPage === 'settings') {
@@ -51,16 +54,18 @@ class Dashboard {
     }
 
     setupEventListeners() {
-        // Controles de água
         document.getElementById('btn-water-on')?.addEventListener('click', () => {
             this.turnOnWater();
         });
 
-        document.getElementById('btn-water-off')?.addEventListener('click', () => {
-            this.turnOffWater();
+        document.getElementById('btn-water-toggle')?.addEventListener('click', () => {
+            this.toggleWater();
         });
 
-        // Automação
+        document.getElementById('btn-aerator-toggle')?.addEventListener('click', () => {
+            this.toggleAerator();
+        });
+
         document.getElementById('btn-auto-enable')?.addEventListener('click', () => {
             this.enableAutomation();
         });
@@ -69,24 +74,27 @@ class Dashboard {
             this.disableAutomation();
         });
 
-        // Iluminação UV
         document.getElementById('btn-light-toggle')?.addEventListener('click', () => {
             this.toggleUVLight();
         });
 
-        // Horários de rega
         document.getElementById('btn-save-schedule')?.addEventListener('click', () => {
             this.saveWaterSchedule();
         });
 
-        // Configurações
         document.getElementById('btn-save-targets')?.addEventListener('click', () => {
             this.saveAutomationTargets();
         });
 
-        // Histórico
         document.getElementById('btn-load-history')?.addEventListener('click', () => {
             this.loadHistoryPage();
+        });
+
+        document.getElementById('btn-ack-alarm')?.addEventListener('click', () => {
+            this.alarmAck = true;
+            this.setAlarmUi(true, true);
+            // força desligar buzzer ao reconhecer
+            this.updateBuzzer(false, true);
         });
     }
 
@@ -95,20 +103,24 @@ class Dashboard {
             this.updateSensorData(),
             this.updateAutomationStatus(),
             this.updateWateringHistory(),
+            this.updateWaterCard(),
             this.updateWeather(),
-            this.updatePlantStatus()
+            this.updatePlantStatus(),
+            this.refreshActuatorStates()
         ]);
     }
 
     startUpdates() {
-        // Atualizar a cada intervalo configurado
         this.updateInterval = setInterval(() => {
             this.updateSensorData();
             this.updateAutomationStatus();
             this.updatePlantStatus();
+            this.updateWaterCard();
+            this.updateWateringHistory();
+            this.refreshActuatorStates();
+            this.checkScheduledWatering();
         }, CONFIG.UPDATE_INTERVAL);
 
-        // Atualizar clima a cada 10 minutos
         setInterval(() => {
             this.updateWeather();
         }, 600000);
@@ -116,19 +128,15 @@ class Dashboard {
 
     async updateSensorData() {
         try {
-            // Obter medições dos dois dispositivos
             const [soilData, airData] = await Promise.all([
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.SOIL).catch(() => null),
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null)
             ]);
 
-            // Temperatura (dispositivo 2)
             if (airData) {
                 const temp = airData.temperatureC || 0;
                 document.getElementById('temp-value').textContent = `${temp.toFixed(1)}°C`;
                 chartManager.updateTempChart(temp);
-                
-                // Status do sensor
                 const tempStatus = document.getElementById('temp-status');
                 tempStatus.className = 'sensor-status active';
                 tempStatus.title = 'Sensor ativo';
@@ -137,7 +145,6 @@ class Dashboard {
                 document.getElementById('temp-status').className = 'sensor-status inactive';
             }
 
-            // Umidade do Solo (dispositivo 1)
             if (soilData) {
                 const soilHumidity = soilData.soilHumidityPct || 0;
                 document.getElementById('soil-value').textContent = `${soilHumidity.toFixed(1)}%`;
@@ -149,21 +156,18 @@ class Dashboard {
                 document.getElementById('soil-status').className = 'sensor-status inactive';
             }
 
-            // Luminosidade e Umidade do Ar
             const lightData = soilData || airData;
+            const lightCard = document.getElementById('light-card');
             if (lightData) {
                 const light = lightData.lightPct || 0;
                 document.getElementById('light-value').textContent = `${light.toFixed(1)}%`;
                 chartManager.updateLightChart(light);
                 document.getElementById('light-status').className = 'sensor-status active';
+                if (lightCard) lightCard.style.display = light > 5 ? 'block' : 'none';
             } else {
                 document.getElementById('light-value').textContent = '--%';
                 document.getElementById('light-status').className = 'sensor-status inactive';
-            }
-
-            if (airData) {
-                const humidity = airData.humidityPct || 0;
-                // Pode ser usado para outros gráficos se necessário
+                if (lightCard) lightCard.style.display = 'none';
             }
 
         } catch (error) {
@@ -172,20 +176,78 @@ class Dashboard {
         }
     }
 
+    // Atualiza card/gráfico de consumo de água com base no device de fluxo
+    async updateWaterCard() {
+        const waterValueEl = document.getElementById('water-value');
+        const waterStatusEl = document.getElementById('water-status');
+
+        const resetWaterUi = () => {
+            if (waterValueEl) waterValueEl.textContent = '-- ml';
+            if (waterStatusEl) waterStatusEl.className = 'sensor-status inactive';
+            if (chartManager.charts.water) {
+                chartManager.charts.water.data.datasets[0].data = [0, 0, 0, 0, 0, 0, 0];
+                chartManager.charts.water.update();
+            }
+        };
+
+        try {
+            const measurements = await api.getMeasurementHistory(CONFIG.DEVICE_IDS.FLOW, 100);
+            if (!measurements || measurements.length === 0) {
+                resetWaterUi();
+                return;
+            }
+
+            const totalVolume = measurements.reduce((sum, m) => sum + (m.waterVolumeMl || 0), 0);
+            if (waterValueEl) waterValueEl.textContent = `${totalVolume.toFixed(0)} ml`;
+            if (waterStatusEl) waterStatusEl.className = 'sensor-status active';
+
+            const perDay = [0, 0, 0, 0, 0, 0, 0]; // Seg..Dom
+            measurements.forEach(m => {
+                const vol = m.waterVolumeMl || 0;
+                const d = new Date(m.createdAt);
+                const dayIdx = (d.getDay() + 6) % 7; // DOM=0 -> idx 6
+                perDay[dayIdx] += vol;
+            });
+
+            if (chartManager.charts.water) {
+                chartManager.charts.water.data.datasets[0].data = perDay;
+                chartManager.charts.water.update();
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar consumo de agua:', error);
+            resetWaterUi();
+        }
+    }
+
     async updateAutomationStatus() {
         try {
             const status = await api.getAutomationStatus();
             const statusText = document.getElementById('auto-status-text');
             const statusEl = document.getElementById('auto-status');
+            this.automationEnabled = !!status.isEnabled;
             
             if (status.isEnabled) {
-                statusText.textContent = 'Ativo';
+                statusText.textContent = 'Automático';
                 statusEl.style.background = '#d4edda';
                 statusEl.style.color = '#155724';
             } else {
-                statusText.textContent = 'Inativo';
-                statusEl.style.background = '#f8d7da';
-                statusEl.style.color = '#721c24';
+                statusText.textContent = 'Manual';
+                statusEl.style.background = '#e2e3e5';
+                statusEl.style.color = '#383d41';
+            }
+
+            // Habilita/desabilita controles manuais conforme modo
+            const waterBtn = document.getElementById('btn-water-toggle');
+            const aerBtn = document.getElementById('btn-aerator-toggle');
+            const manualEnabled = !this.automationEnabled;
+            if (waterBtn) waterBtn.disabled = !manualEnabled;
+            if (aerBtn) aerBtn.disabled = !manualEnabled;
+            if (!manualEnabled) {
+                waterBtn?.classList.add('disabled');
+                aerBtn?.classList.add('disabled');
+            } else {
+                waterBtn?.classList.remove('disabled');
+                aerBtn?.classList.remove('disabled');
             }
         } catch (error) {
             console.error('Erro ao atualizar status da automação:', error);
@@ -196,20 +258,29 @@ class Dashboard {
         const tbody = document.getElementById('watering-history-body');
         if (!tbody) return;
 
-        if (this.wateringHistory.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3">Nenhuma rega registrada</td></tr>';
-            return;
-        }
+        try {
+            const measurements = await api.getMeasurementHistory(CONFIG.DEVICE_IDS.FLOW, 50);
+            if (!measurements || measurements.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3">Nenhuma rega registrada</td></tr>';
+                return;
+            }
 
-        // Mostrar últimas 10 regas
-        const recent = this.wateringHistory.slice(-10).reverse();
-        tbody.innerHTML = recent.map(item => `
-            <tr>
-                <td>${new Date(item.date).toLocaleDateString('pt-BR')}</td>
-                <td>${new Date(item.date).toLocaleTimeString('pt-BR')}</td>
-                <td>${item.amount} ml</td>
-            </tr>
-        `).join('');
+            const recent = measurements.slice(-10).reverse();
+            tbody.innerHTML = recent.map(m => {
+                const d = new Date(m.createdAt);
+                const vol = (m.waterVolumeMl || 0).toFixed(0);
+                return `
+                    <tr>
+                        <td>${d.toLocaleDateString('pt-BR')}</td>
+                        <td>${d.toLocaleTimeString('pt-BR')}</td>
+                        <td>${vol} ml</td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erro ao carregar historico de rega:', error);
+            tbody.innerHTML = '<tr><td colspan="3">Erro ao carregar dados</td></tr>';
+        }
     }
 
     async updateWeather() {
@@ -246,6 +317,8 @@ class Dashboard {
                 messageEl.innerHTML = '<i class="fas fa-question-circle"></i> Dados insuficientes';
                 messageEl.className = 'status-message warning';
                 detailsEl.textContent = 'Aguardando dados dos sensores...';
+                this.setAlarmUi(false, false);
+                await this.updateBuzzer(false);
                 return;
             }
 
@@ -257,7 +330,6 @@ class Dashboard {
             let message = 'Planta saudável';
             let details = [];
 
-            // Verificar umidade do solo
             if (soilHumidity < 30) {
                 status = 'danger';
                 message = 'Precisa de mais água';
@@ -268,7 +340,6 @@ class Dashboard {
                 details.push('Cuidado com excesso de água');
             }
 
-            // Verificar temperatura
             if (temp < 15) {
                 if (status === 'healthy') status = 'warning';
                 details.push('Temperatura abaixo do ideal');
@@ -277,10 +348,11 @@ class Dashboard {
                 details.push('Temperatura acima do ideal');
             }
 
-            // Verificar luminosidade
-            if (light < 30) {
-                if (status === 'healthy') status = 'warning';
-                details.push('Precisa de mais luz');
+            // Ajusta mensagem padrão se status mudou
+            if (status === 'warning' && message === 'Planta saudável') {
+                message = 'Atenção à planta';
+            } else if (status === 'danger' && message === 'Planta saudável') {
+                message = 'Precisa de atenção';
             }
 
             messageEl.innerHTML = `<i class="fas fa-${status === 'healthy' ? 'check-circle' : status === 'warning' ? 'exclamation-triangle' : 'times-circle'}"></i> ${message}`;
@@ -289,29 +361,157 @@ class Dashboard {
                 ? details.map(d => `<p>• ${d}</p>`).join('')
                 : '<p>• Todas as condições estão dentro dos parâmetros ideais</p>';
 
+            const alarmActive = status !== 'healthy';
+
+            // Se status mudou para um novo alarme, reseta reconhecimento
+            if (alarmActive && this.lastStatus !== status) {
+                this.alarmAck = false;
+            }
+
+            // Se voltou a saudável, limpa tudo e força buzzer off
+            if (!alarmActive) {
+                this.alarmAck = false;
+                this.setAlarmUi(false, false);
+                await this.updateBuzzer(false, true);
+                this.lastStatus = status;
+                return;
+            }
+
+            this.setAlarmUi(alarmActive, this.alarmAck);
+
+            // Aciona buzzer via API conforme status (somente se não reconhecido)
+            await this.updateBuzzer(alarmActive && !this.alarmAck);
+
+            this.lastStatus = status;
+
         } catch (error) {
             console.error('Erro ao atualizar status da planta:', error);
         }
     }
 
-    async turnOnWater() {
+    async updateBuzzer(shouldBeOn, force = false) {
+        if (!CONFIG.ACTUATOR_IDS.BUZZER) return;
+        if (!force && this.lastBuzzerOn === shouldBeOn) return; // evita chamadas repetidas
+        this.lastBuzzerOn = shouldBeOn;
         try {
-            await api.executeCommand(CONFIG.ACTUATOR_IDS.WATER_PUMP, 'on');
-            this.showNotification('Rega iniciada', 'success');
-            
-            // Registrar no histórico
-            this.addWateringRecord(50); // Quantidade estimada em ml
+            await api.executeCommand(CONFIG.ACTUATOR_IDS.BUZZER, shouldBeOn ? 'on' : 'off');
         } catch (error) {
-            this.showNotification('Erro ao ligar rega: ' + error.message, 'error');
+            console.error('Erro ao acionar buzzer:', error);
+            this.showNotification('Erro ao acionar buzzer: ' + error.message, 'error');
         }
     }
 
-    async turnOffWater() {
+    setAlarmUi(active, acknowledged) {
+        const badgeActive = document.getElementById('alarm-active-badge');
+        const badgeAck = document.getElementById('alarm-ack-badge');
+        const btnAck = document.getElementById('btn-ack-alarm');
+
+        if (!badgeActive || !badgeAck || !btnAck) return;
+
+        if (!active) {
+            badgeActive.style.display = 'none';
+            badgeAck.style.display = 'none';
+            btnAck.style.display = 'none';
+            return;
+        }
+
+        if (acknowledged) {
+            badgeActive.style.display = 'none';
+            badgeAck.style.display = 'inline-flex';
+            btnAck.style.display = 'none';
+        } else {
+            badgeActive.style.display = 'inline-flex';
+            badgeAck.style.display = 'none';
+            btnAck.style.display = 'inline-flex';
+        }
+    }
+
+    async toggleWater() {
+        const desired = !this.waterOn;
         try {
-            await api.executeCommand(CONFIG.ACTUATOR_IDS.WATER_PUMP, 'off');
-            this.showNotification('Rega desligada', 'success');
+            await api.executeCommand(CONFIG.ACTUATOR_IDS.WATER_PUMP, desired ? 'on' : 'off');
+            this.waterOn = desired;
+            this.updateMotorButtons();
+            this.showNotification(desired ? 'Irrigação ligada' : 'Irrigação desligada', 'success');
         } catch (error) {
-            this.showNotification('Erro ao desligar rega: ' + error.message, 'error');
+            this.showNotification('Erro ao alternar irrigação: ' + error.message, 'error');
+        }
+    }
+
+    async toggleAerator() {
+        const desired = !this.aeratorOn;
+        try {
+            await api.executeCommand(CONFIG.ACTUATOR_IDS.FAN, desired ? 'on' : 'off');
+            this.aeratorOn = desired;
+            this.updateMotorButtons();
+            this.showNotification(desired ? 'Aerador ligado' : 'Aerador desligado', 'success');
+        } catch (error) {
+            this.showNotification('Erro ao alternar aerador: ' + error.message, 'error');
+        }
+    }
+
+    async refreshActuatorStates() {
+        try {
+            const [waterStatus, aerStatus] = await Promise.all([
+                api.getActuatorStatus(CONFIG.ACTUATOR_IDS.WATER_PUMP).catch(() => null),
+                api.getActuatorStatus(CONFIG.ACTUATOR_IDS.FAN).catch(() => null)
+            ]);
+            if (waterStatus) this.waterOn = !!waterStatus.isActive;
+            if (aerStatus) this.aeratorOn = !!aerStatus.isActive;
+            this.updateMotorButtons();
+        } catch (error) {
+            // silencioso
+        }
+    }
+
+    updateMotorButtons() {
+        const waterBtn = document.getElementById('btn-water-toggle');
+        const aerBtn = document.getElementById('btn-aerator-toggle');
+        if (waterBtn && this.waterOn !== null) {
+            waterBtn.className = this.waterOn ? 'btn btn-danger' : 'btn btn-primary';
+            waterBtn.innerHTML = this.waterOn
+                ? '<i class="fas fa-stop"></i> Desligar Irrigação'
+                : '<i class="fas fa-play"></i> Ligar Irrigação';
+        }
+        if (aerBtn && this.aeratorOn !== null) {
+            aerBtn.className = this.aeratorOn ? 'btn btn-secondary' : 'btn btn-success';
+            aerBtn.innerHTML = this.aeratorOn
+                ? '<i class="fas fa-hand-paper"></i> Desligar Aerador'
+                : '<i class="fas fa-fan"></i> Ligar Aerador';
+        }
+    }
+
+    async checkScheduledWatering() {
+        if (!this.automationEnabled) return;
+        if (!this.scheduledTimes || this.scheduledTimes.length === 0) return;
+
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const current = `${hh}:${mm}`;
+        const todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${current}`;
+
+        if (this.lastScheduleRun === todayKey) return;
+        if (!this.scheduledTimes.includes(current)) return;
+
+        // marca que executou este horário hoje
+        this.lastScheduleRun = todayKey;
+        localStorage.setItem('waterScheduleLastRun', todayKey);
+
+        try {
+            await api.executeCommand(CONFIG.ACTUATOR_IDS.WATER_PUMP, 'on');
+            this.waterOn = true;
+            this.updateMotorButtons();
+            this.showNotification(`Irrigação automática às ${current}`, 'success');
+            setTimeout(async () => {
+                try {
+                    await api.executeCommand(CONFIG.ACTUATOR_IDS.WATER_PUMP, 'off');
+                    this.waterOn = false;
+                    this.updateMotorButtons();
+                } catch (_) { /* ignore */ }
+            }, 3000);
+        } catch (error) {
+            this.showNotification('Erro na irrigação automática: ' + error.message, 'error');
         }
     }
 
@@ -354,6 +554,7 @@ class Dashboard {
         const time2 = document.getElementById('schedule-time-2').value;
         
         localStorage.setItem('waterSchedule', JSON.stringify([time1, time2]));
+        this.scheduledTimes = [time1, time2];
         this.showNotification('Horários de rega salvos', 'success');
     }
 
@@ -421,56 +622,6 @@ class Dashboard {
         }
     }
 
-    addWateringRecord(amount) {
-        const record = {
-            date: new Date().toISOString(),
-            amount: amount
-        };
-        this.wateringHistory.push(record);
-        
-        // Manter apenas últimas 100 regas
-        if (this.wateringHistory.length > 100) {
-            this.wateringHistory = this.wateringHistory.slice(-100);
-        }
-        
-        localStorage.setItem('wateringHistory', JSON.stringify(this.wateringHistory));
-        this.updateWateringHistory();
-
-        // Atualizar consumo semanal
-        const week = this.getWeekOfYear(new Date());
-        this.waterConsumption[week] = (this.waterConsumption[week] || 0) + amount;
-        localStorage.setItem('waterConsumption', JSON.stringify(this.waterConsumption));
-        this.updateWaterChart();
-    }
-
-    getWeekOfYear(date) {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        const dayNum = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    }
-
-    updateWaterChart() {
-        if (!chartManager.charts.water) return;
-
-        const currentWeek = this.getWeekOfYear(new Date());
-        const weekData = [0, 0, 0, 0, 0, 0, 0];
-
-        // Simulação de dados (em produção, calcular baseado no histórico real)
-        Object.keys(this.waterConsumption).forEach(week => {
-            if (Math.abs(parseInt(week) - currentWeek) <= 3) {
-                const amount = this.waterConsumption[week] / 7; // Distribuir pelos dias
-                weekData.forEach((_, i) => {
-                    weekData[i] += amount;
-                });
-            }
-        });
-
-        chartManager.charts.water.data.datasets[0].data = weekData;
-        chartManager.charts.water.update();
-    }
-
     showNotification(message, type = 'info') {
         const container = document.getElementById('notifications');
         if (!container) return;
@@ -491,8 +642,6 @@ class Dashboard {
     }
 }
 
-// Inicializar dashboard quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
 });
-

@@ -6,6 +6,8 @@ public class MeasurementCreateDto
 	public double SoilHumidityPct { get; set; }   // usado pelo deviceId 1
     public double AirHumidityPct { get; set; }    // usado pelo deviceId 2
     public double TemperatureC { get; set; }      // usado pelo deviceId 2
+	public double WaterFlowLpm { get; set; }       // usado pelo sensor de vazão
+	public double WaterVolumeMl { get; set; }      // volume medido na janela de amostragem
 }
 
 public class MeasurementDto
@@ -16,6 +18,8 @@ public class MeasurementDto
 	public double SoilHumidityPct { get; set; }
 	public double TemperatureC { get; set; }
 	public double HumidityPct { get; set; }
+	public double WaterFlowLpm { get; set; }
+	public double WaterVolumeMl { get; set; }
 	public DateTime CreatedAt { get; set; }
 }
 

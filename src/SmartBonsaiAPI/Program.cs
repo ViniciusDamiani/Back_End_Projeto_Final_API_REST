@@ -12,7 +12,12 @@ builder.WebHost.UseUrls("http://0.0.0.0:5000");
 EnvLoader.Load();
 
 // Services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -43,6 +48,36 @@ using (var scope = app.Services.CreateScope())
             Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
             Name = "Water Pump",
             Type = "pump",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000002")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+            Name = "UV Light",
+            Type = "light",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000003")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
+            Name = "Aerator",
+            Type = "fan",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000004")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000004"),
+            Name = "Buzzer",
+            Type = "buzzer",
             IsActive = false
         });
         db.SaveChanges();
