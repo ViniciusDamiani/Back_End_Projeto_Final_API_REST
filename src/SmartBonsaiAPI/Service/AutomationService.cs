@@ -125,13 +125,22 @@ public class AutomationService : IAutomationService
                 var executed = await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
                 if (executed)
                 {
-                    var subject = "Automação: Aquecedor ligado";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {heater.Name} (heater)\n" +
-                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C < alvo mínimo {automationStatus.TargetTemperatureMin:F1}°C\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
+                    try
+                    {
+                        var subject = "SmartBonsai - Automação: Aquecedor ligado";
+                        var body =
+                            $"Ação automática executada.\n" +
+                            $"Atuador: {heater.Name} (heater)\n" +
+                            $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C < alvo mínimo {automationStatus.TargetTemperatureMin:F1}°C\n" +
+                            $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                        Console.WriteLine($"[Automation] Notificação: {subject} -> iniciando envio...");
+                        await _emailSender.SendAsync(subject, body);
+                        Console.WriteLine($"[Automation] Notificação: {subject} -> envio solicitado.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[AutomationService] Erro ao enviar email de notificação: {ex.Message}");
+                    }
                 }
             }
         }
@@ -144,13 +153,22 @@ public class AutomationService : IAutomationService
                 var executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
                 if (executed)
                 {
-                    var subject = "Automação: Ventilador ligado";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {fan.Name} (fan)\n" +
-                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C > alvo máximo {automationStatus.TargetTemperatureMax:F1}°C\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
+                        try
+                        {
+                            var subject = "SmartBonsai - Automação: Ventilador ligado";
+                            var body =
+                                $"Ação automática executada.\n" +
+                                $"Atuador: {fan.Name} (fan)\n" +
+                                $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C > alvo máximo {automationStatus.TargetTemperatureMax:F1}°C\n" +
+                                $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                            Console.WriteLine($"[Automation] Notificação: {subject} -> iniciando envio...");
+                            await _emailSender.SendAsync(subject, body);
+                            Console.WriteLine($"[Automation] Notificação: {subject} -> envio solicitado.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[AutomationService] Erro ao enviar email de notificação: {ex.Message}");
+                        }
                 }
             }
         }
@@ -164,13 +182,22 @@ public class AutomationService : IAutomationService
                 var executed = await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
                 if (executed)
                 {
-                    var subject = "Automação: Bomba de água ligada";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {pump.Name} (pump)\n" +
-                        $"Motivo: Umidade {latestMeasurement.HumidityPct:F1}% < alvo mínimo {automationStatus.TargetHumidityMin:F1}%\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
+                        try
+                        {
+                            var subject = "SmartBonsai - Automação: Bomba de água ligada";
+                            var body =
+                                $"Ação automática executada.\n" +
+                                $"Atuador: {pump.Name} (pump)\n" +
+                                $"Motivo: Umidade {latestMeasurement.HumidityPct:F1}% < alvo mínimo {automationStatus.TargetHumidityMin:F1}%\n" +
+                                $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                            Console.WriteLine($"[Automation] Notificação: {subject} -> iniciando envio...");
+                            await _emailSender.SendAsync(subject, body);
+                            Console.WriteLine($"[Automation] Notificação: {subject} -> envio solicitado.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[AutomationService] Erro ao enviar email de notificação: {ex.Message}");
+                        }
                 }
             }
         }

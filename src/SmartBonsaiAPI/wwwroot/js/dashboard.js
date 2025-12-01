@@ -116,10 +116,11 @@ class Dashboard {
 
     async updateSensorData() {
         try {
-            // Obter medições dos dois dispositivos
-            const [soilData, airData] = await Promise.all([
+            // Obter medições dos três dispositivos
+            const [soilData, airData, lightData] = await Promise.all([
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.SOIL).catch(() => null),
-                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null)
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null),
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.LIGHT).catch(() => null)
             ]);
 
             // Temperatura (dispositivo 2)
@@ -149,9 +150,8 @@ class Dashboard {
                 document.getElementById('soil-status').className = 'sensor-status inactive';
             }
 
-            // Luminosidade e Umidade do Ar
-            const lightData = soilData || airData;
-            if (lightData) {
+            // Luminosidade (dispositivo 3)
+            if (lightData && lightData.lightPct !== undefined) {
                 const light = lightData.lightPct || 0;
                 document.getElementById('light-value').textContent = `${light.toFixed(1)}%`;
                 chartManager.updateLightChart(light);
@@ -234,15 +234,16 @@ class Dashboard {
 
     async updatePlantStatus() {
         try {
-            const [soilData, airData] = await Promise.all([
+            const [soilData, airData, lightData] = await Promise.all([
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.SOIL).catch(() => null),
-                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null)
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null),
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.LIGHT).catch(() => null)
             ]);
 
             const messageEl = document.getElementById('plant-status-message');
             const detailsEl = document.getElementById('plant-status-details');
 
-            if (!soilData && !airData) {
+            if (!soilData && !airData && !lightData) {
                 messageEl.innerHTML = '<i class="fas fa-question-circle"></i> Dados insuficientes';
                 messageEl.className = 'status-message warning';
                 detailsEl.textContent = 'Aguardando dados dos sensores...';
@@ -251,7 +252,7 @@ class Dashboard {
 
             const soilHumidity = soilData?.soilHumidityPct || 0;
             const temp = airData?.temperatureC || 0;
-            const light = soilData?.lightPct || airData?.lightPct || 0;
+            const light = lightData?.lightPct || 0;
 
             let status = 'healthy';
             let message = 'Planta saudável';
@@ -495,4 +496,5 @@ class Dashboard {
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
 });
+
 
