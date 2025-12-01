@@ -310,3 +310,4 @@ class ChartManager {
 // Instância global do gerenciador de gráficos
 const chartManager = new ChartManager();
 
+

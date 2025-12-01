@@ -112,70 +112,218 @@ public class AutomationService : IAutomationService
 
         if (latestMeasurement == null) return;
 
+        // Verificar se email está configurado
+        var emailConfigured = _emailSender.IsConfigured();
+
         // Buscar atuadores disponíveis
         var actuators = await _db.Actuators.ToListAsync();
 
-        // Regras de automação
+        // Regras de automação - Temperatura
         if (latestMeasurement.TemperatureC < automationStatus.TargetTemperatureMin)
         {
             // Ligar aquecedor
             var heater = actuators.FirstOrDefault(a => a.Type == "heater");
+            bool executed = false;
+            
             if (heater != null)
             {
-                var executed = await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
-                if (executed)
-                {
-                    var subject = "Automação: Aquecedor ligado";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {heater.Name} (heater)\n" +
-                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C < alvo mínimo {automationStatus.TargetTemperatureMin:F1}°C\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
-                }
+                executed = await _actuatorService.ExecuteCommandAsync(heater.Id, new ActionCommandDto { Action = "on" });
+            }
+
+            // Enviar email de notificação (mesmo se o atuador não existir)
+            if (emailConfigured)
+            {
+                await SendAutomationEmailAsync(
+                    "⚠️ Alerta: Temperatura abaixo do mínimo",
+                    $"A temperatura do ambiente está abaixo do limite configurado.\n\n" +
+                    $"📊 Dados atuais:\n" +
+                    $"  • Temperatura: {latestMeasurement.TemperatureC:F1}°C\n" +
+                    $"  • Limite mínimo: {automationStatus.TargetTemperatureMin:F1}°C\n" +
+                    $"  • Diferença: {automationStatus.TargetTemperatureMin - latestMeasurement.TemperatureC:F1}°C abaixo\n\n" +
+                    $"🔧 Ação tomada: {(heater != null ? (executed ? $"Aquecedor '{heater.Name}' foi ligado" : "Tentativa de ligar aquecedor falhou") : "Nenhum aquecedor configurado")}\n\n" +
+                    $"🕐 Data/Hora: {TimeZoneHelper.GetBrazilTimeFormatted()}"
+                );
             }
         }
         else if (latestMeasurement.TemperatureC > automationStatus.TargetTemperatureMax)
         {
             // Ligar ventilador
             var fan = actuators.FirstOrDefault(a => a.Type == "fan");
+            bool executed = false;
+            
             if (fan != null)
             {
-                var executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
-                if (executed)
-                {
-                    var subject = "Automação: Ventilador ligado";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {fan.Name} (fan)\n" +
-                        $"Motivo: Temperatura {latestMeasurement.TemperatureC:F1}°C > alvo máximo {automationStatus.TargetTemperatureMax:F1}°C\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
-                }
+                executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
+            }
+
+            // Enviar email de notificação
+            if (emailConfigured)
+            {
+                await SendAutomationEmailAsync(
+                    "⚠️ Alerta: Temperatura acima do máximo",
+                    $"A temperatura do ambiente está acima do limite configurado.\n\n" +
+                    $"📊 Dados atuais:\n" +
+                    $"  • Temperatura: {latestMeasurement.TemperatureC:F1}°C\n" +
+                    $"  • Limite máximo: {automationStatus.TargetTemperatureMax:F1}°C\n" +
+                    $"  • Diferença: {latestMeasurement.TemperatureC - automationStatus.TargetTemperatureMax:F1}°C acima\n\n" +
+                    $"🔧 Ação tomada: {(fan != null ? (executed ? $"Ventilador '{fan.Name}' foi ligado" : "Tentativa de ligar ventilador falhou") : "Nenhum ventilador configurado")}\n\n" +
+                    $"🕐 Data/Hora: {TimeZoneHelper.GetBrazilTimeFormatted()}"
+                );
             }
         }
 
-        if (latestMeasurement.HumidityPct < automationStatus.TargetHumidityMin)
+        // Regras de automação - Umidade do Solo
+        if (latestMeasurement.SoilHumidityPct < automationStatus.TargetHumidityMin)
         {
             // Ligar bomba de água
             var pump = actuators.FirstOrDefault(a => a.Type == "pump");
+            bool executed = false;
+            
             if (pump != null)
             {
-                var executed = await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
-                if (executed)
-                {
-                    var subject = "Automação: Bomba de água ligada";
-                    var body =
-                        $"Ação automática executada.\n" +
-                        $"Atuador: {pump.Name} (pump)\n" +
-                        $"Motivo: Umidade {latestMeasurement.HumidityPct:F1}% < alvo mínimo {automationStatus.TargetHumidityMin:F1}%\n" +
-                        $"Data/Hora (UTC): {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    await _emailSender.SendAsync(subject, body);
-                }
+                executed = await _actuatorService.ExecuteCommandAsync(pump.Id, new ActionCommandDto { Action = "on" });
+            }
+
+            // Enviar email de notificação
+            if (emailConfigured)
+            {
+                await SendAutomationEmailAsync(
+                    "💧 Alerta: Umidade do solo abaixo do mínimo",
+                    $"A umidade do solo está abaixo do limite configurado.\n\n" +
+                    $"📊 Dados atuais:\n" +
+                    $"  • Umidade do solo: {latestMeasurement.SoilHumidityPct:F1}%\n" +
+                    $"  • Limite mínimo: {automationStatus.TargetHumidityMin:F1}%\n" +
+                    $"  • Diferença: {automationStatus.TargetHumidityMin - latestMeasurement.SoilHumidityPct:F1}% abaixo\n\n" +
+                    $"🔧 Ação tomada: {(pump != null ? (executed ? $"Bomba de água '{pump.Name}' foi ligada" : "Tentativa de ligar bomba falhou") : "Nenhuma bomba configurada")}\n\n" +
+                    $"🕐 Data/Hora: {TimeZoneHelper.GetBrazilTimeFormatted()}"
+                );
+            }
+        }
+        else if (latestMeasurement.SoilHumidityPct > automationStatus.TargetHumidityMax)
+        {
+            // Umidade muito alta - ligar ventilador/cooler para secar
+            var fan = actuators.FirstOrDefault(a => a.Type == "fan");
+            bool executed = false;
+            
+            if (fan != null)
+            {
+                executed = await _actuatorService.ExecuteCommandAsync(fan.Id, new ActionCommandDto { Action = "on" });
+            }
+
+            // Enviar email de notificação
+            if (emailConfigured)
+            {
+                await SendAutomationEmailAsync(
+                    "🌊 Alerta: Umidade do solo acima do máximo",
+                    $"A umidade do solo está acima do limite configurado.\n\n" +
+                    $"📊 Dados atuais:\n" +
+                    $"  • Umidade do solo: {latestMeasurement.SoilHumidityPct:F1}%\n" +
+                    $"  • Limite máximo: {automationStatus.TargetHumidityMax:F1}%\n" +
+                    $"  • Diferença: {latestMeasurement.SoilHumidityPct - automationStatus.TargetHumidityMax:F1}% acima\n\n" +
+                    $"⚠️ Atenção: Excesso de água pode prejudicar a planta!\n\n" +
+                    $"🔧 Ação tomada: {(fan != null ? (executed ? $"Ventilador '{fan.Name}' foi ligado para secar" : "Tentativa de ligar ventilador falhou") : "Nenhum ventilador configurado")}\n\n" +
+                    $"🕐 Data/Hora: {TimeZoneHelper.GetBrazilTimeFormatted()}"
+                );
             }
         }
 
         automationStatus.LastEvaluation = DateTime.UtcNow;
         await _db.SaveChangesAsync();
+    }
+
+    private async Task SendAutomationEmailAsync(string subject, string bodyText)
+    {
+        try
+        {
+            if (!_emailSender.IsConfigured())
+            {
+                Console.WriteLine("[AutomationService] Email não configurado. Não foi possível enviar notificação.");
+                return;
+            }
+
+            // Determinar cor do header baseado no tipo de alerta
+            string headerColor = "#ff9800"; // Laranja padrão para alertas
+            string icon = "⚠️";
+            
+            if (subject.Contains("Temperatura abaixo") || subject.Contains("Umidade do solo abaixo"))
+            {
+                headerColor = "#2196F3"; // Azul para alertas de valores baixos
+                icon = "📉";
+            }
+            else if (subject.Contains("Temperatura acima") || subject.Contains("Umidade do solo acima"))
+            {
+                headerColor = "#f44336"; // Vermelho para alertas críticos
+                icon = "📈";
+            }
+
+            // Converter o texto em parágrafos HTML no mesmo formato do email de teste
+            var lines = bodyText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            var bodyHtml = string.Join("", lines.Select(line => 
+            {
+                line = line.Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                    return "";
+                
+                // Se a linha começa com emoji seguido de texto (ex: "📊 Dados atuais:")
+                if ((line.Contains("📊") || line.Contains("🔧") || line.Contains("🕐") || line.Contains("⚠️") || line.Contains("💧") || line.Contains("🌊")) && line.Contains(":"))
+                {
+                    return $"<p><strong>{line}</strong></p>";
+                }
+                // Se a linha começa com bullet point
+                if (line.StartsWith("•"))
+                {
+                    return $"<p>{line}</p>";
+                }
+                // Linhas normais de texto
+                return $"<p>{line}</p>";
+            }));
+
+            // Criar HTML no mesmo estilo exato do email de teste
+            var htmlBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background-color: {headerColor}; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+        .content {{ background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; }}
+        .success {{ color: #4CAF50; font-weight: bold; }}
+        .info {{ background-color: #e7f3ff; padding: 15px; border-left: 4px solid #2196F3; margin: 15px 0; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>{icon} SmartBonsai API</h1>
+        </div>
+        <div class='content'>
+            <p class='success'>{subject}</p>
+            <div class='info'>
+                {bodyHtml}
+            </div>
+            <p>Este é um email automático do sistema SmartBonsai. As ações foram executadas automaticamente com base nas configurações de automação.</p>
+        </div>
+        <div class='footer'>
+            <p>SmartBonsai API - Sistema de Monitoramento de Bonsai</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+            await _emailSender.SendAsync(subject, htmlBody, isHtml: true);
+            Console.WriteLine($"[AutomationService] Email de automação enviado: {subject}");
+        }
+        catch (Exception ex)
+        {
+            // Log do erro mas não interrompe a automação
+            Console.WriteLine($"[AutomationService] Erro ao enviar email de automação: {ex.Message}");
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[AutomationService] Detalhes: {ex.InnerException.Message}");
+            }
+        }
     }
 }

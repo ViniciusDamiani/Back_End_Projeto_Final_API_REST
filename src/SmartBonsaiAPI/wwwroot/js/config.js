@@ -11,7 +11,7 @@
     },
     UPDATE_INTERVAL: 5000,
     WEATHER_API_KEY: null,
-    WEATHER_CITY: 'Florianópolis,BR'
+    WEATHER_CITY: 'Criciuma,BR'
   };
 })();
 

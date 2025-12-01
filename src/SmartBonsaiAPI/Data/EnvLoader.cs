@@ -1,40 +1,104 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 public static class EnvLoader
 {
+    private static string? _loadedFrom = null;
+
     public static void Load()
     {
-        // Procura .env no diretório atual e no pai
+        // Procura .env em vários locais possíveis
         var candidates = new List<string>();
+        
         try
         {
+            // 1. Diretório onde o executável está rodando (bin/Debug/netX.0/)
             var baseDir = AppContext.BaseDirectory;
-            var dir = new DirectoryInfo(baseDir);
-            if (dir != null)
+            if (!string.IsNullOrEmpty(baseDir))
             {
-                candidates.Add(Path.Combine(dir.FullName, ".env"));
-                if (dir.Parent != null)
+                candidates.Add(Path.Combine(baseDir, ".env"));
+                
+                // 2. Diretório pai (bin/Debug/)
+                var dir = new DirectoryInfo(baseDir);
+                if (dir?.Parent != null)
                 {
                     candidates.Add(Path.Combine(dir.Parent.FullName, ".env"));
+                    
+                    // 3. Diretório avô (bin/)
+                    if (dir.Parent.Parent != null)
+                    {
+                        candidates.Add(Path.Combine(dir.Parent.Parent.FullName, ".env"));
+                        
+                        // 4. Diretório do projeto (src/SmartBonsaiAPI/)
+                        if (dir.Parent.Parent.Parent != null)
+                        {
+                            candidates.Add(Path.Combine(dir.Parent.Parent.Parent.FullName, ".env"));
+                        }
+                    }
                 }
             }
+
+            // 5. Diretório de trabalho atual
+            var currentDir = Directory.GetCurrentDirectory();
+            if (!string.IsNullOrEmpty(currentDir))
+            {
+                candidates.Add(Path.Combine(currentDir, ".env"));
+            }
+
+            // 6. Raiz do projeto (onde está o .sln)
+            try
+            {
+                var solutionDir = FindSolutionDirectory();
+                if (!string.IsNullOrEmpty(solutionDir))
+                {
+                    candidates.Add(Path.Combine(solutionDir, ".env"));
+                }
+            }
+            catch { }
         }
         catch
         {
             // ignora erros de descoberta de caminho
         }
 
+        // Remove duplicatas mantendo ordem
+        candidates = candidates.Distinct().Where(p => !string.IsNullOrEmpty(p)).ToList();
+
         foreach (var path in candidates)
         {
             if (File.Exists(path))
             {
                 ApplyFile(path);
-                break;
+                _loadedFrom = path;
+                Console.WriteLine($"[EnvLoader] Arquivo .env carregado de: {path}");
+                return;
             }
         }
+
+        Console.WriteLine("[EnvLoader] Nenhum arquivo .env encontrado. Procurou em:");
+        foreach (var path in candidates)
+        {
+            Console.WriteLine($"  - {path}");
+        }
     }
+
+    private static string? FindSolutionDirectory()
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (current != null)
+        {
+            if (current.GetFiles("*.sln").Length > 0)
+            {
+                return current.FullName;
+            }
+            current = current.Parent;
+        }
+        return null;
+    }
+
+    public static string? GetLoadedFrom() => _loadedFrom;
 
     private static void ApplyFile(string filePath)
     {
