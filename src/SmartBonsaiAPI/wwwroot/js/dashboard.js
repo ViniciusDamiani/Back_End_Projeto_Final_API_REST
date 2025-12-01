@@ -136,15 +136,9 @@ class Dashboard {
 
     async updateSensorData() {
         try {
-<<<<<<< HEAD
-            // Obter medições dos três dispositivos
-            const [soilData, airData, lightData] = await Promise.all([
-=======
             const [soilData, airData] = await Promise.all([
->>>>>>> upstream/main
                 api.getLatestMeasurement(CONFIG.DEVICE_IDS.SOIL).catch(() => null),
-                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null),
-                api.getLatestMeasurement(CONFIG.DEVICE_IDS.LIGHT).catch(() => null)
+                api.getLatestMeasurement(CONFIG.DEVICE_IDS.AIR).catch(() => null)
             ]);
 
             if (airData) {
@@ -170,14 +164,9 @@ class Dashboard {
                 document.getElementById('soil-status').className = 'sensor-status inactive';
             }
 
-<<<<<<< HEAD
-            // Luminosidade (dispositivo 3)
-            if (lightData && lightData.lightPct !== undefined) {
-=======
             const lightData = soilData || airData;
             const lightCard = document.getElementById('light-card');
             if (lightData) {
->>>>>>> upstream/main
                 const light = lightData.lightPct || 0;
                 document.getElementById('light-value').textContent = `${light.toFixed(1)}%`;
                 chartManager.updateLightChart(light);
@@ -745,8 +734,3 @@ class Dashboard {
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new Dashboard();
 });
-<<<<<<< HEAD
-
-
-=======
->>>>>>> upstream/main

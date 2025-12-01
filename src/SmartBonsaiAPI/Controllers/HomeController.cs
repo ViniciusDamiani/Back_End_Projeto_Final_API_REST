@@ -7,9 +7,9 @@ namespace SmartBonsaiAPI.Controllers
     [Route("api/info")]
     public class HomeController : ControllerBase
     {
-        private readonly IEmailSender _emailSender;
+        private readonly IEmailSender? _emailSender;
 
-        public HomeController(IEmailSender emailSender = null)
+        public HomeController(IEmailSender? emailSender = null)
         {
             _emailSender = emailSender;
         }

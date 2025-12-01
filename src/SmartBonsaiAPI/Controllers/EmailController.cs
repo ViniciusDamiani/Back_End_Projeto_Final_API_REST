@@ -13,15 +13,10 @@ public class EmailController : ControllerBase
         _emailSender = emailSender;
     }
 
-    /// <summary>
-    /// Verifica se o serviço de email está configurado
-    /// </summary>
     [HttpGet("status")]
     public IActionResult GetStatus()
     {
         var isConfigured = _emailSender.IsConfigured();
-        
-        // Diagnóstico das variáveis (sem mostrar valores sensíveis)
         var envVars = new
         {
             SMTP_HOST = GetEnvStatus("SMTP_HOST"),
@@ -76,9 +71,6 @@ SMTP_ENABLE_SSL=true"
         };
     }
 
-    /// <summary>
-    /// Envia um email de teste
-    /// </summary>
     [HttpPost("test")]
     public async Task<IActionResult> SendTestEmail()
     {
@@ -123,9 +115,6 @@ SMTP_ENABLE_SSL=true"
         }
     }
 
-    /// <summary>
-    /// Envia um email customizado (para testes)
-    /// </summary>
     [HttpPost("send")]
     public async Task<IActionResult> SendEmail([FromBody] EmailRequestDto request)
     {

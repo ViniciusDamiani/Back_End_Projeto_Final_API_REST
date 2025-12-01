@@ -24,7 +24,12 @@ builder.Services.AddSwaggerGen();
 
 // Infra/Domain registrations
 builder.Services.AddDbContext<SmartRoomContext>(options => options.UseInMemoryDatabase("SmartRoomDb"));
-builder.Services.AddScoped<IMeasurementService, MeasurementService>();
+builder.Services.AddScoped<IMeasurementService>(sp => 
+{
+    var db = sp.GetRequiredService<SmartRoomContext>();
+    var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+    return new MeasurementService(db, scopeFactory);
+});
 builder.Services.AddScoped<IActuatorService, ActuatorService>();
 builder.Services.AddScoped<IAutomationService, AutomationService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
@@ -40,56 +45,6 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-<<<<<<< HEAD
-// Inicializar dados padrão no banco (atuadores)
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<SmartRoomContext>();
-    
-    // Verificar se já existem atuadores
-    if (!db.Actuators.Any())
-    {
-        db.Actuators.AddRange(new[]
-        {
-            new Actuator
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
-                Name = "Bomba de Água",
-                Type = "pump",
-                IsActive = false,
-                LastUpdated = DateTime.UtcNow
-            },
-            new Actuator
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
-                Name = "Iluminação UV",
-                Type = "light",
-                IsActive = false,
-                LastUpdated = DateTime.UtcNow
-            },
-            new Actuator
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
-                Name = "Ventilador",
-                Type = "fan",
-                IsActive = false,
-                LastUpdated = DateTime.UtcNow
-            },
-            new Actuator
-            {
-                Id = Guid.Parse("00000000-0000-0000-0000-000000000004"),
-                Name = "Aquecedor",
-                Type = "heater",
-                IsActive = false,
-                LastUpdated = DateTime.UtcNow
-            }
-        });
-        db.SaveChanges();
-        Console.WriteLine("[Startup] Atuadores padrão inicializados.");
-    }
-}
-
-=======
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<SmartRoomContext>();
@@ -134,9 +89,6 @@ using (var scope = app.Services.CreateScope())
         db.SaveChanges();
     }
 }
-
-
->>>>>>> upstream/main
 // Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -157,5 +109,3 @@ app.UseDefaultFiles();
 app.MapControllers();
 
 app.Run();
-
-
