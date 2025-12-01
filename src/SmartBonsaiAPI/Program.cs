@@ -13,7 +13,12 @@ builder.WebHost.UseUrls("http://0.0.0.0:5000");
 EnvLoader.Load();
 
 // Services
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -35,6 +40,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+<<<<<<< HEAD
 // Inicializar dados padrão no banco (atuadores)
 using (var scope = app.Services.CreateScope())
 {
@@ -83,6 +89,54 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+=======
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SmartRoomContext>();
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000001")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
+            Name = "Water Pump",
+            Type = "pump",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000002")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
+            Name = "UV Light",
+            Type = "light",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000003")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000003"),
+            Name = "Aerator",
+            Type = "fan",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+    if (!db.Actuators.Any(a => a.Id == Guid.Parse("00000000-0000-0000-0000-000000000004")))
+    {
+        db.Actuators.Add(new Actuator {
+            Id = Guid.Parse("00000000-0000-0000-0000-000000000004"),
+            Name = "Buzzer",
+            Type = "buzzer",
+            IsActive = false
+        });
+        db.SaveChanges();
+    }
+}
+
+
+>>>>>>> upstream/main
 // Ativar Swagger SEM restrição de ambiente
 app.UseSwagger();
 app.UseSwaggerUI(c =>

@@ -1,4 +1,4 @@
-// Funções de comunicação com a API
+                 // Funções de comunicação com a API
 
 class SmartBonsaiAPI {
     constructor(baseUrl) {
